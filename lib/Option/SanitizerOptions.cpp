@@ -185,6 +185,46 @@ OptionSet<SanitizerKind> swift::parseSanitizerArgValues(
   return sanitizerSet;
 }
 
+OptionSet<SanitizerKind> swift::parseSanitizerRecoverArgValues(
+    const llvm::opt::Arg *A, const OptionSet<SanitizerKind> &enabledSanitizers,
+    DiagnosticEngine &Diags) {
+  OptionSet<SanitizerKind> sanitizerRecoverSet;
+
+  // Find the sanitizer kind.
+  for (const char *arg : A->getValues()) {
+    Optional<SanitizerKind> optKind = parse(arg);
+
+    // Unrecognized sanitizer option
+    if (!optKind.hasValue()) {
+      Diags.diagnose(SourceLoc(), diag::error_unsupported_option_argument,
+                     A->getOption().getPrefixedName(), arg);
+      continue;
+    }
+    SanitizerKind kind = optKind.getValue();
+
+    // Only support ASan for now.
+    if (kind != SanitizerKind::Address) {
+      Diags.diagnose(SourceLoc(), diag::error_unsupported_option_argument,
+                     A->getOption().getPrefixedName(), arg);
+      continue;
+    }
+
+    // Check that the sanitizer is enabled.
+    if (!(enabledSanitizers & kind)) {
+      SmallString<128> b;
+      Diags.diagnose(
+          SourceLoc(), diag::error_option_requires_specific_sanitizer,
+          (A->getOption().getPrefixedName() + toStringRef(kind)).toStringRef(b),
+          toStringRef(kind));
+      continue;
+    }
+
+    sanitizerRecoverSet |= kind;
+  }
+
+  return sanitizerRecoverSet;
+}
+
 std::string swift::getSanitizerList(const OptionSet<SanitizerKind> &Set) {
   std::string list;
   #define SANITIZER(_, kind, name, file) \

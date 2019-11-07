@@ -1636,6 +1636,12 @@ void Driver::buildOutputInfo(const ToolChain &TC, const DerivedArgList &Args,
           return TC.sanitizerRuntimeLibExists(Args, sanitizerName, shared);
         });
 
+  if (const Arg *A = Args.getLastArg(options::OPT_sanitize_recover_EQ)) {
+    // Just validate the args. The frontend will parse these again and actually
+    // use them.
+    (void)parseSanitizerRecoverArgValues(A, OI.SelectedSanitizers, Diags);
+  }
+
   if (const Arg *A = Args.getLastArg(options::OPT_sanitize_coverage_EQ)) {
 
     // Check that the sanitizer coverage flags are supported if supplied.
