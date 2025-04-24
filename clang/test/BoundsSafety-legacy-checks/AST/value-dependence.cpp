@@ -1,5 +1,3 @@
-// FIXME: XFAIL'ed because sema errors are emitted when the new bounds checks are enabled (rdar://150044760)
-// XFAIL: *
 // RUN: %clang_cc1 -fexperimental-bounds-safety-attributes -ast-dump %s 2>&1 | FileCheck %s --check-prefix=ATTR-ONLY
 // RUN: %clang_cc1 -fbounds-safety -fbounds-attributes-cxx-experimental -DBOUNDS_SAFETY -ast-dump %s 2>&1 | FileCheck %s --check-prefix=BOUNDS-CHECK
 
@@ -224,7 +222,6 @@ struct Outer {
         T size;
         T * __sized_by_or_null(size) p_m;
         T * __sized_by_or_null(sizeof(T) * n) mymalloc_m(int n) {
-            // FIXME: error: cannot extract the lower bound of 'int *' because it has no bounds specification (rdar://150044760)
             return static_cast<T *>(malloc(sizeof(T) * n));
         }
 
