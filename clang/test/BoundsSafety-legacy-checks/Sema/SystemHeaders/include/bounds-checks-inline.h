@@ -129,6 +129,9 @@ inline void inline_header_assign_local_cb_unsafe_ptr(void) {
   // strict-error@+1{{assignment to 'count2' requires corresponding assignment to 'int *__single __counted_by(count2)' (aka 'int *__single') 'local2'; add self assignment 'local2 = local2' if the value has not changed}}
   count2 = 0;
 }
+
+#ifdef TEST_COMPOUND_LITERALS
+
 struct simple_cb {
   int count;
   int* __counted_by(count) ptr;
@@ -155,3 +158,5 @@ inline void inline_header_compound_literal_unsafe_indexable_ptr(struct simple_cb
   // incorrect-error@+1{{cannot extract the lower bound of 'int *__unsafe_indexable' because it has no bounds specification}}
   s = (struct simple_cb){.count = 0, .ptr = unsafe_indexable_ptr};
 }
+
+#endif

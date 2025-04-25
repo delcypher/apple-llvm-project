@@ -1,4 +1,7 @@
-// RUN: %clang_cc1 -fsyntax-only -fbounds-safety -verify=expected,rs %s
+// TODO: We should get the same diagnostics with/without return_size (rdar://138982703)
+
+// RUN: %clang_cc1 -fsyntax-only -fbounds-safety -verify=expected %s
+// RUN: %clang_cc1 -fsyntax-only -fbounds-safety -verify=expected,rs -fbounds-safety-bringup-missing-checks=return_size %s
 #include <ptrcheck.h>
 
 int *__ended_by(end) func_ret_end(int *end) {
