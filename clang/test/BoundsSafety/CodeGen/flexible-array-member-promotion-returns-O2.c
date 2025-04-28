@@ -14,7 +14,7 @@ inline flex_t *return_flex(int *__counted_by(11) buf) {
 }
 
 // CHECK-LABEL: @pointer_assign_good(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  cont47:
 // CHECK-NEXT:    ret void
 //
 void pointer_assign_good() {
@@ -24,7 +24,7 @@ void pointer_assign_good() {
 }
 
 // CHECK-LABEL: @pointer_assign_good2(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  cont47:
 // CHECK-NEXT:    ret void
 //
 void pointer_assign_good2() {
@@ -34,7 +34,7 @@ void pointer_assign_good2() {
 }
 
 // CHECK-LABEL: @pointer_init_good(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  cont47:
 // CHECK-NEXT:    ret void
 //
 void pointer_init_good() {
@@ -43,7 +43,7 @@ void pointer_init_good() {
 }
 
 // CHECK-LABEL: @pointer_init_good2(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  cont47:
 // CHECK-NEXT:    ret void
 //
 void pointer_init_good2() {
@@ -52,9 +52,9 @@ void pointer_init_good2() {
 }
 
 // CHECK-LABEL: @pointer_count_assign_trap(
-// CHECK-NEXT:  {{.*}}:
-// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR3:[0-9]+]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:  entry:
+// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR6:[0-9]+]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 //
 void pointer_count_assign_trap() {
   int arr[11] = {10};
@@ -64,9 +64,9 @@ void pointer_count_assign_trap() {
 }
 
 // CHECK-LABEL: @pointer_count_init_trap(
-// CHECK-NEXT:  {{.*}}:
-// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR3]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:  entry:
+// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR6]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 //
 void pointer_count_init_trap() {
   int arr[11] = {10};
@@ -75,7 +75,7 @@ void pointer_count_init_trap() {
 }
 
 // CHECK-LABEL: @pointer_count_assign_good(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  entry:
 // CHECK-NEXT:    ret void
 //
 void pointer_count_assign_good() {
@@ -86,7 +86,7 @@ void pointer_count_assign_good() {
 }
 
 // CHECK-LABEL: @pointer_count_init_good(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  entry:
 // CHECK-NEXT:    ret void
 //
 void pointer_count_init_good() {
@@ -96,7 +96,7 @@ void pointer_count_init_good() {
 }
 
 // CHECK-LABEL: @elem_access_good(
-// CHECK-NEXT:  {{.*}}:
+// CHECK-NEXT:  cont69:
 // CHECK-NEXT:    ret void
 //
 void elem_access_good() {
@@ -107,9 +107,25 @@ void elem_access_good() {
 }
 
 // CHECK-LABEL: @elem_access_trap(
-// CHECK-NEXT:  {{.*}}:
-// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR3]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:  cont47:
+// CHECK-NEXT:    [[ARR:%.*]] = alloca [11 x i32], align 4
+// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 44, ptr nonnull [[ARR]]) #[[ATTR7:[0-9]+]]
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 4
+// CHECK-NEXT:    call void @llvm.memset.p0.i64(ptr noundef nonnull align 4 dereferenceable(44) [[TMP0]], i8 0, i64 40, i1 false)
+// CHECK-NEXT:    store i32 10, ptr [[ARR]], align 4
+// CHECK-NEXT:    [[ADD_PTR_I:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 44
+// CHECK-NEXT:    [[AGG_TEMP_SROA_12_0_SROA_GEP87:%.*]] = getelementptr i8, ptr [[ARR]], i64 48
+// CHECK-NEXT:    [[ADD_PTR56:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 44
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[AGG_TEMP_SROA_12_0_SROA_GEP87]], [[ADD_PTR56]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[ADD_PTR_I]], [[AGG_TEMP_SROA_12_0_SROA_GEP87]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND75:%.*]] = and i1 [[TMP2]], [[TMP1]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND75]], label [[CONT69:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR6]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont69:
+// CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 44, ptr nonnull [[ARR]]) #[[ATTR7]]
+// CHECK-NEXT:    ret void
 //
 void elem_access_trap() {
   int arr[11] = {10};

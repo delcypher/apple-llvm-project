@@ -29,22 +29,30 @@ int consume(int* __bidi_indexable ptr, int idx) {
 // OPT0-NEXT:    [[WIDE_PTR_UB:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR]], align 8
 // OPT0-NEXT:    [[WIDE_PTR_LB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 2
 // OPT0-NEXT:    [[WIDE_PTR_LB:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR]], align 8
-// OPT0-NEXT:    [[TMP1:%.*]] = icmp ult ptr [[ARRAYIDX]], [[WIDE_PTR_UB]], !annotation [[META2:![0-9]+]]
-// OPT0-NEXT:    br i1 [[TMP1]], label %[[CONT:.*]], label %[[TRAP:.*]], !annotation [[META2]]
+// OPT0-NEXT:    [[TMP1:%.*]] = getelementptr i32, ptr [[ARRAYIDX]], i64 1, !annotation [[META2:![0-9]+]]
+// OPT0-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[TMP1]], [[WIDE_PTR_UB]], !annotation [[META2]]
+// OPT0-NEXT:    br i1 [[TMP2]], label %[[CONT:.*]], label %[[TRAP:.*]], !annotation [[META2]]
 // OPT0:       [[TRAP]]:
 // OPT0-NEXT:    call void asm sideeffect "", "n"(i64 0), !annotation [[META2]]
 // OPT0-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3:[0-9]+]], !annotation [[META2]]
 // OPT0-NEXT:    unreachable, !annotation [[META2]]
 // OPT0:       [[CONT]]:
-// OPT0-NEXT:    [[TMP2:%.*]] = icmp uge ptr [[ARRAYIDX]], [[WIDE_PTR_LB]], !annotation [[META3:![0-9]+]]
-// OPT0-NEXT:    br i1 [[TMP2]], label %[[CONT2:.*]], label %[[TRAP1:.*]], !annotation [[META3]]
+// OPT0-NEXT:    [[TMP3:%.*]] = icmp ule ptr [[ARRAYIDX]], [[TMP1]], !annotation [[META2]]
+// OPT0-NEXT:    br i1 [[TMP3]], label %[[CONT2:.*]], label %[[TRAP1:.*]], !annotation [[META2]]
 // OPT0:       [[TRAP1]]:
-// OPT0-NEXT:    call void asm sideeffect "", "n"(i64 1), !annotation [[META3]]
+// OPT0-NEXT:    call void asm sideeffect "", "n"(i64 1), !annotation [[META2]]
+// OPT0-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3]], !annotation [[META2]]
+// OPT0-NEXT:    unreachable, !annotation [[META2]]
+// OPT0:       [[CONT2]]:
+// OPT0-NEXT:    [[TMP4:%.*]] = icmp uge ptr [[ARRAYIDX]], [[WIDE_PTR_LB]], !annotation [[META3:![0-9]+]]
+// OPT0-NEXT:    br i1 [[TMP4]], label %[[CONT4:.*]], label %[[TRAP3:.*]], !annotation [[META3]]
+// OPT0:       [[TRAP3]]:
+// OPT0-NEXT:    call void asm sideeffect "", "n"(i64 2), !annotation [[META3]]
 // OPT0-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3]], !annotation [[META3]]
 // OPT0-NEXT:    unreachable, !annotation [[META3]]
-// OPT0:       [[CONT2]]:
-// OPT0-NEXT:    [[TMP3:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
-// OPT0-NEXT:    ret i32 [[TMP3]]
+// OPT0:       [[CONT4]]:
+// OPT0-NEXT:    [[TMP5:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
+// OPT0-NEXT:    ret i32 [[TMP5]]
 //
 //
 // OPT2-LABEL: define i32 @consume(
@@ -65,25 +73,33 @@ int consume(int* __bidi_indexable ptr, int idx) {
 // OPT2-NEXT:    [[WIDE_PTR_UB:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR]], align 8
 // OPT2-NEXT:    [[WIDE_PTR_LB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 2
 // OPT2-NEXT:    [[WIDE_PTR_LB:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR]], align 8
-// OPT2-NEXT:    [[TMP1:%.*]] = icmp ult ptr [[ARRAYIDX]], [[WIDE_PTR_UB]], !annotation [[META9:![0-9]+]]
-// OPT2-NEXT:    br i1 [[TMP1]], label %[[CONT:.*]], label %[[TRAP:.*]], !annotation [[META9]]
+// OPT2-NEXT:    [[TMP1:%.*]] = getelementptr i32, ptr [[ARRAYIDX]], i64 1, !annotation [[META9:![0-9]+]]
+// OPT2-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[TMP1]], [[WIDE_PTR_UB]], !annotation [[META9]]
+// OPT2-NEXT:    br i1 [[TMP2]], label %[[CONT:.*]], label %[[TRAP:.*]], !annotation [[META9]]
 // OPT2:       [[TRAP]]:
 // OPT2-NEXT:    call void asm sideeffect "", "n"(i64 0), !annotation [[META9]]
 // OPT2-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3:[0-9]+]], !annotation [[META9]]
 // OPT2-NEXT:    unreachable, !annotation [[META9]]
 // OPT2:       [[CONT]]:
-// OPT2-NEXT:    [[TMP2:%.*]] = icmp uge ptr [[ARRAYIDX]], [[WIDE_PTR_LB]], !annotation [[META10:![0-9]+]]
-// OPT2-NEXT:    br i1 [[TMP2]], label %[[CONT2:.*]], label %[[TRAP1:.*]], !annotation [[META10]]
+// OPT2-NEXT:    [[TMP3:%.*]] = icmp ule ptr [[ARRAYIDX]], [[TMP1]], !annotation [[META9]]
+// OPT2-NEXT:    br i1 [[TMP3]], label %[[CONT2:.*]], label %[[TRAP1:.*]], !annotation [[META9]]
 // OPT2:       [[TRAP1]]:
-// OPT2-NEXT:    call void asm sideeffect "", "n"(i64 1), !annotation [[META10]]
+// OPT2-NEXT:    call void asm sideeffect "", "n"(i64 1), !annotation [[META9]]
+// OPT2-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3]], !annotation [[META9]]
+// OPT2-NEXT:    unreachable, !annotation [[META9]]
+// OPT2:       [[CONT2]]:
+// OPT2-NEXT:    [[TMP4:%.*]] = icmp uge ptr [[ARRAYIDX]], [[WIDE_PTR_LB]], !annotation [[META10:![0-9]+]]
+// OPT2-NEXT:    br i1 [[TMP4]], label %[[CONT4:.*]], label %[[TRAP3:.*]], !annotation [[META10]]
+// OPT2:       [[TRAP3]]:
+// OPT2-NEXT:    call void asm sideeffect "", "n"(i64 2), !annotation [[META10]]
 // OPT2-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3]], !annotation [[META10]]
 // OPT2-NEXT:    unreachable, !annotation [[META10]]
-// OPT2:       [[CONT2]]:
-// OPT2-NEXT:    [[TMP3:%.*]] = load i32, ptr [[ARRAYIDX]], align 4, !tbaa [[TBAA6]]
-// OPT2-NEXT:    ret i32 [[TMP3]]
+// OPT2:       [[CONT4]]:
+// OPT2-NEXT:    [[TMP5:%.*]] = load i32, ptr [[ARRAYIDX]], align 4, !tbaa [[TBAA6]]
+// OPT2-NEXT:    ret i32 [[TMP5]]
 //
 //.
-// OPT0: [[META2]] = !{!"bounds-safety-check-ptr-lt-upper-bound"}
+// OPT0: [[META2]] = !{!"bounds-safety-check-ptr-le-upper-bound"}
 // OPT0: [[META3]] = !{!"bounds-safety-check-ptr-ge-lower-bound"}
 //.
 // OPT2: [[TBAA2]] = !{[[META3:![0-9]+]], [[META3]], i64 0}
@@ -93,6 +109,6 @@ int consume(int* __bidi_indexable ptr, int idx) {
 // OPT2: [[TBAA6]] = !{[[META7:![0-9]+]], [[META7]], i64 0}
 // OPT2: [[META7]] = !{!"int", [[META4]], i64 0}
 // OPT2: [[TBAA_STRUCT8]] = !{i64 0, i64 24, [[TBAA2]]}
-// OPT2: [[META9]] = !{!"bounds-safety-check-ptr-lt-upper-bound"}
+// OPT2: [[META9]] = !{!"bounds-safety-check-ptr-le-upper-bound"}
 // OPT2: [[META10]] = !{!"bounds-safety-check-ptr-ge-lower-bound"}
 //.

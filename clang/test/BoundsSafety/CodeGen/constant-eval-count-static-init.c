@@ -33,25 +33,32 @@ const Item oidRsa = { _oidRsa, sizeof(_oidRsa)};
 // CHECK-NEXT:    store ptr [[TMP1]], ptr [[TMP4]], align 8
 // CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0
 // CHECK-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8
-// CHECK-NEXT:    [[TMP5:%.*]] = getelementptr i32, ptr [[WIDE_PTR_PTR]], i64 3
+// CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr i32, ptr [[WIDE_PTR_PTR]], i64 3
 // CHECK-NEXT:    [[WIDE_PTR_UB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 1
 // CHECK-NEXT:    [[WIDE_PTR_UB:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR]], align 8
 // CHECK-NEXT:    [[WIDE_PTR_LB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 2
 // CHECK-NEXT:    [[WIDE_PTR_LB:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR]], align 8
-// CHECK-NEXT:    [[TMP6:%.*]] = icmp ult ptr [[TMP5]], [[WIDE_PTR_UB]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP5:%.*]] = getelementptr i32, ptr [[ARRAYIDX]], i64 1, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP6:%.*]] = icmp ule ptr [[TMP5]], [[WIDE_PTR_UB]], {{!annotation ![0-9]+}}
 // CHECK-NEXT:    br i1 [[TMP6]], label [[CONT:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
 // CHECK:       trap:
 // CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3:[0-9]+]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 // CHECK:       cont:
-// CHECK-NEXT:    [[TMP7:%.*]] = icmp uge ptr [[TMP5]], [[WIDE_PTR_LB]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP7:%.*]] = icmp ule ptr [[ARRAYIDX]], [[TMP5]], {{!annotation ![0-9]+}}
 // CHECK-NEXT:    br i1 [[TMP7]], label [[CONT3:%.*]], label [[TRAP2:%.*]], {{!annotation ![0-9]+}}
 // CHECK:       trap2:
 // CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 // CHECK:       cont3:
-// CHECK-NEXT:    [[TMP8:%.*]] = load i32, ptr [[TMP5]], align 4
-// CHECK-NEXT:    ret i32 [[TMP8]]
+// CHECK-NEXT:    [[TMP8:%.*]] = icmp uge ptr [[ARRAYIDX]], [[WIDE_PTR_LB]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[TMP8]], label [[CONT5:%.*]], label [[TRAP4:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap4:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR3]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont5:
+// CHECK-NEXT:    [[TMP9:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
+// CHECK-NEXT:    ret i32 [[TMP9]]
 //
 int main() {
 	return oidRsa.data[3]; // trap

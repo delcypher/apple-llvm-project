@@ -34,12 +34,12 @@ int * __counted_by(len) baz(int len);
 // CHECK-NEXT:    unreachable, !annotation [[META5]]
 // CHECK:       [[CONT]]:
 // CHECK-NEXT:    [[FLEX_BASE_NULL_CHECK_NOT:%.*]] = icmp eq ptr [[CALL1]], null, !annotation [[META6:![0-9]+]]
-// CHECK-NEXT:    br i1 [[FLEX_BASE_NULL_CHECK_NOT]], label %[[CONT69:.*]], label %[[FLEX_BASE_NONNULL:.*]], !annotation [[META6]]
+// CHECK-NEXT:    br i1 [[FLEX_BASE_NULL_CHECK_NOT]], label %[[CONT70:.*]], label %[[FLEX_BASE_NONNULL:.*]], !annotation [[META6]]
 // CHECK:       [[FLEX_BASE_NONNULL]]:
 // CHECK-NEXT:    [[TMP1:%.*]] = getelementptr i8, ptr [[CALL1]], i64 16
 // CHECK-NEXT:    [[DOTNOT:%.*]] = icmp ugt ptr [[CALL1]], [[TMP1]], !annotation [[META7:![0-9]+]]
-// CHECK-NEXT:    [[DOTNOT106:%.*]] = icmp ugt ptr [[CALL1]], [[TMP0]], !annotation [[META8:![0-9]+]]
-// CHECK-NEXT:    [[OR_COND:%.*]] = select i1 [[DOTNOT]], i1 true, i1 [[DOTNOT106]], !annotation [[META8]]
+// CHECK-NEXT:    [[DOTNOT110:%.*]] = icmp ugt ptr [[CALL1]], [[TMP0]], !annotation [[META8:![0-9]+]]
+// CHECK-NEXT:    [[OR_COND:%.*]] = select i1 [[DOTNOT]], i1 true, i1 [[DOTNOT110]], !annotation [[META8]]
 // CHECK-NEXT:    br i1 [[OR_COND]], label %[[TRAP]], label %[[CONT60:.*]], !annotation [[META7]]
 // CHECK:       [[CONT60]]:
 // CHECK-NEXT:    [[UPPER_INTPTR:%.*]] = ptrtoint ptr [[ADD_PTR3]] to i64, !annotation [[META9:![0-9]+]]
@@ -47,13 +47,11 @@ int * __counted_by(len) baz(int len);
 // CHECK-NEXT:    [[FLEX_AVAIL_COUNT:%.*]] = sub nuw i64 [[UPPER_INTPTR]], [[FAM_INTPTR]], !annotation [[META9]]
 // CHECK-NEXT:    [[FLEX_AVAIL_COUNT_DIV:%.*]] = ashr exact i64 [[FLEX_AVAIL_COUNT]], 2, !annotation [[META9]]
 // CHECK-NEXT:    [[FLEX_COUNT_INTPTR:%.*]] = zext nneg i32 [[LEN]] to i64, !annotation [[META9]]
-// CHECK-NEXT:    [[FLEX_COUNT_CHECK_NOT:%.*]] = icmp uge i64 [[FLEX_AVAIL_COUNT_DIV]], [[FLEX_COUNT_INTPTR]], !annotation [[META9]]
-// CHECK-NEXT:    [[TMP2:%.*]] = icmp ult ptr [[CALL1]], [[ADD_PTR3]], !annotation [[META8]]
-// CHECK-NEXT:    [[OR_COND108:%.*]] = select i1 [[FLEX_COUNT_CHECK_NOT]], i1 [[TMP2]], i1 false, !annotation [[META6]]
-// CHECK-NEXT:    br i1 [[OR_COND108]], label %[[CONT69]], label %[[TRAP]], !annotation [[META9]]
-// CHECK:       [[CONT69]]:
-// CHECK-NEXT:    [[LEN70:%.*]] = getelementptr inbounds i8, ptr [[CALL1]], i64 8
-// CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN70]], align 8, !tbaa [[TBAA10:![0-9]+]]
+// CHECK-NEXT:    [[FLEX_COUNT_CHECK_NOT_NOT:%.*]] = icmp ult i64 [[FLEX_AVAIL_COUNT_DIV]], [[FLEX_COUNT_INTPTR]], !annotation [[META9]]
+// CHECK-NEXT:    br i1 [[FLEX_COUNT_CHECK_NOT_NOT]], label %[[TRAP]], label %[[CONT70]], !annotation [[META9]]
+// CHECK:       [[CONT70]]:
+// CHECK-NEXT:    [[LEN71:%.*]] = getelementptr inbounds i8, ptr [[CALL1]], i64 8
+// CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN71]], align 8, !tbaa [[TBAA10:![0-9]+]]
 // CHECK-NEXT:    store ptr [[CALL]], ptr [[CALL1]], align 8, !tbaa [[TBAA16:![0-9]+]]
 // CHECK-NEXT:    ret ptr [[CALL1]]
 //
@@ -83,12 +81,12 @@ struct Outer *foo(int len) {
 // CHECK-NEXT:    unreachable, !annotation [[META5]]
 // CHECK:       [[CONT]]:
 // CHECK-NEXT:    [[FLEX_BASE_NULL_CHECK_NOT:%.*]] = icmp eq ptr [[CALL1]], null, !annotation [[META6]]
-// CHECK-NEXT:    br i1 [[FLEX_BASE_NULL_CHECK_NOT]], label %[[CONT69:.*]], label %[[FLEX_BASE_NONNULL:.*]], !annotation [[META6]]
+// CHECK-NEXT:    br i1 [[FLEX_BASE_NULL_CHECK_NOT]], label %[[CONT70:.*]], label %[[FLEX_BASE_NONNULL:.*]], !annotation [[META6]]
 // CHECK:       [[FLEX_BASE_NONNULL]]:
 // CHECK-NEXT:    [[TMP1:%.*]] = getelementptr i8, ptr [[CALL1]], i64 16
 // CHECK-NEXT:    [[DOTNOT:%.*]] = icmp ugt ptr [[CALL1]], [[TMP1]], !annotation [[META7]]
-// CHECK-NEXT:    [[DOTNOT106:%.*]] = icmp ugt ptr [[CALL1]], [[TMP0]], !annotation [[META8]]
-// CHECK-NEXT:    [[OR_COND:%.*]] = select i1 [[DOTNOT]], i1 true, i1 [[DOTNOT106]], !annotation [[META8]]
+// CHECK-NEXT:    [[DOTNOT110:%.*]] = icmp ugt ptr [[CALL1]], [[TMP0]], !annotation [[META8]]
+// CHECK-NEXT:    [[OR_COND:%.*]] = select i1 [[DOTNOT]], i1 true, i1 [[DOTNOT110]], !annotation [[META8]]
 // CHECK-NEXT:    br i1 [[OR_COND]], label %[[TRAP]], label %[[CONT60:.*]], !annotation [[META7]]
 // CHECK:       [[CONT60]]:
 // CHECK-NEXT:    [[UPPER_INTPTR:%.*]] = ptrtoint ptr [[ADD_PTR3]] to i64, !annotation [[META9]]
@@ -96,14 +94,12 @@ struct Outer *foo(int len) {
 // CHECK-NEXT:    [[FLEX_AVAIL_COUNT:%.*]] = sub nuw i64 [[UPPER_INTPTR]], [[FAM_INTPTR]], !annotation [[META9]]
 // CHECK-NEXT:    [[FLEX_AVAIL_COUNT_DIV:%.*]] = ashr exact i64 [[FLEX_AVAIL_COUNT]], 2, !annotation [[META9]]
 // CHECK-NEXT:    [[FLEX_COUNT_INTPTR:%.*]] = zext nneg i32 [[LEN]] to i64, !annotation [[META9]]
-// CHECK-NEXT:    [[FLEX_COUNT_CHECK_NOT:%.*]] = icmp uge i64 [[FLEX_AVAIL_COUNT_DIV]], [[FLEX_COUNT_INTPTR]], !annotation [[META9]]
-// CHECK-NEXT:    [[TMP2:%.*]] = icmp ult ptr [[CALL1]], [[ADD_PTR3]], !annotation [[META8]]
-// CHECK-NEXT:    [[OR_COND108:%.*]] = select i1 [[FLEX_COUNT_CHECK_NOT]], i1 [[TMP2]], i1 false, !annotation [[META6]]
-// CHECK-NEXT:    br i1 [[OR_COND108]], label %[[CONT69]], label %[[TRAP]], !annotation [[META9]]
-// CHECK:       [[CONT69]]:
+// CHECK-NEXT:    [[FLEX_COUNT_CHECK_NOT_NOT:%.*]] = icmp ult i64 [[FLEX_AVAIL_COUNT_DIV]], [[FLEX_COUNT_INTPTR]], !annotation [[META9]]
+// CHECK-NEXT:    br i1 [[FLEX_COUNT_CHECK_NOT_NOT]], label %[[TRAP]], label %[[CONT70]], !annotation [[META9]]
+// CHECK:       [[CONT70]]:
 // CHECK-NEXT:    store ptr [[CALL]], ptr [[CALL1]], align 8, !tbaa [[TBAA16]]
-// CHECK-NEXT:    [[LEN78:%.*]] = getelementptr inbounds i8, ptr [[CALL1]], i64 8
-// CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN78]], align 8, !tbaa [[TBAA10]]
+// CHECK-NEXT:    [[LEN79:%.*]] = getelementptr inbounds i8, ptr [[CALL1]], i64 8
+// CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN79]], align 8, !tbaa [[TBAA10]]
 // CHECK-NEXT:    ret ptr [[CALL1]]
 //
 struct Outer *foo2(int len) {

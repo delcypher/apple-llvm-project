@@ -5,29 +5,106 @@
 #include <ptrcheck.h>
 
 // TODO: rdar://114446928
-// CHECK-LABEL: define dso_local ptr @foo
-// CHECK-SAME: (ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0:[0-9]+]] {
+// CHECK-LABEL: define dso_local ptr @foo(
+// CHECK-SAME: ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0:[0-9]+]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[P_INDIRECT_ADDR:%.*]] = alloca ptr, align 8
 // CHECK-NEXT:    [[LEN_ADDR:%.*]] = alloca i32, align 4
 // CHECK-NEXT:    [[AGG_TEMP:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP1:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP4:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP7:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP15:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP22:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP25:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
+// CHECK-NEXT:    [[AGG_TEMP38:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
 // CHECK-NEXT:    store ptr [[P]], ptr [[P_INDIRECT_ADDR]], align 8
 // CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN_ADDR]], align 4
-// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP]], ptr align 8 [[P]], i64 24, i1 false)
-// CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0
-// CHECK-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8
-// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 1
-// CHECK-NEXT:    [[WIDE_PTR_UB:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR]], align 8
-// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 2
-// CHECK-NEXT:    [[WIDE_PTR_LB:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR]], align 8
-// CHECK-NEXT:    ret ptr [[WIDE_PTR_PTR]]
+// CHECK-NEXT:    [[TMP0:%.*]] = load i32, ptr [[LEN_ADDR]], align 4
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2:![0-9]+]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 1, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 2, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP1]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR2:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP1]], i32 0, i32 1, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB3:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR2]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[CMP:%.*]] = icmp ule ptr [[WIDE_PTR_PTR]], [[WIDE_PTR_UB3]], !annotation [[META2]]
+// CHECK-NEXT:    br i1 [[CMP]], label [[LAND_LHS_TRUE:%.*]], label [[LAND_END37:%.*]], !annotation [[META2]]
+// CHECK:       land.lhs.true:
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP4]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR5:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP4]], i32 0, i32 2, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB6:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR5]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP7]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR8:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP7]], i32 0, i32 0, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR9:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR8]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR10:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP7]], i32 0, i32 1, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB11:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR10]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR12:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP7]], i32 0, i32 2, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB13:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR12]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[CMP14:%.*]] = icmp ule ptr [[WIDE_PTR_LB6]], [[WIDE_PTR_PTR9]], !annotation [[META2]]
+// CHECK-NEXT:    br i1 [[CMP14]], label [[LAND_RHS:%.*]], label [[LAND_END37]], !annotation [[META2]]
+// CHECK:       land.rhs:
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP15]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR16:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP15]], i32 0, i32 0, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR17:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR16]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR18:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP15]], i32 0, i32 1, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB19:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR18]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR20:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP15]], i32 0, i32 2, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB21:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR20]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[TOBOOL:%.*]] = icmp ne ptr [[WIDE_PTR_PTR17]], null, !annotation [[META2]]
+// CHECK-NEXT:    br i1 [[TOBOOL]], label [[LOR_RHS:%.*]], label [[LOR_END:%.*]], !annotation [[META2]]
+// CHECK:       lor.rhs:
+// CHECK-NEXT:    [[CONV:%.*]] = sext i32 [[TMP0]] to i64, !annotation [[META2]]
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP22]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR23:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP22]], i32 0, i32 1, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB24:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR23]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP25]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR26:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP25]], i32 0, i32 0, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_PTR27:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR26]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR28:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP25]], i32 0, i32 1, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_UB29:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR28]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR30:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP25]], i32 0, i32 2, !annotation [[META2]]
+// CHECK-NEXT:    [[WIDE_PTR_LB31:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR30]], align 8, !annotation [[META2]]
+// CHECK-NEXT:    [[SUB_PTR_LHS_CAST:%.*]] = ptrtoint ptr [[WIDE_PTR_UB24]] to i64, !annotation [[META2]]
+// CHECK-NEXT:    [[SUB_PTR_RHS_CAST:%.*]] = ptrtoint ptr [[WIDE_PTR_PTR27]] to i64, !annotation [[META2]]
+// CHECK-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]], !annotation [[META2]]
+// CHECK-NEXT:    [[SUB_PTR_DIV:%.*]] = sdiv exact i64 [[SUB_PTR_SUB]], 4, !annotation [[META2]]
+// CHECK-NEXT:    [[CMP32:%.*]] = icmp sle i64 [[CONV]], [[SUB_PTR_DIV]], !annotation [[META2]]
+// CHECK-NEXT:    br i1 [[CMP32]], label [[LAND_RHS34:%.*]], label [[LAND_END:%.*]], !annotation [[META2]]
+// CHECK:       land.rhs34:
+// CHECK-NEXT:    [[CMP35:%.*]] = icmp sle i32 0, [[TMP0]], !annotation [[META2]]
+// CHECK-NEXT:    br label [[LAND_END]], !annotation [[META2]]
+// CHECK:       land.end:
+// CHECK-NEXT:    [[TMP1:%.*]] = phi i1 [ false, [[LOR_RHS]] ], [ [[CMP35]], [[LAND_RHS34]] ]
+// CHECK-NEXT:    br label [[LOR_END]], !annotation [[META2]]
+// CHECK:       lor.end:
+// CHECK-NEXT:    [[TMP2:%.*]] = phi i1 [ true, [[LAND_RHS]] ], [ [[TMP1]], [[LAND_END]] ]
+// CHECK-NEXT:    br label [[LAND_END37]], !annotation [[META2]]
+// CHECK:       land.end37:
+// CHECK-NEXT:    [[TMP3:%.*]] = phi i1 [ false, [[LAND_LHS_TRUE]] ], [ false, [[ENTRY:%.*]] ], [ [[TMP2]], [[LOR_END]] ], !annotation [[META2]]
+// CHECK-NEXT:    br i1 [[TMP3]], label [[CONT:%.*]], label [[TRAP:%.*]], !annotation [[META2]]
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR4:[0-9]+]], !annotation [[META2]]
+// CHECK-NEXT:    unreachable, !annotation [[META2]]
+// CHECK:       cont:
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP38]], ptr align 8 [[P]], i64 24, i1 false)
+// CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR39:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP38]], i32 0, i32 0
+// CHECK-NEXT:    [[WIDE_PTR_PTR40:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR39]], align 8
+// CHECK-NEXT:    [[WIDE_PTR_UB_ADDR41:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP38]], i32 0, i32 1
+// CHECK-NEXT:    [[WIDE_PTR_UB42:%.*]] = load ptr, ptr [[WIDE_PTR_UB_ADDR41]], align 8
+// CHECK-NEXT:    [[WIDE_PTR_LB_ADDR43:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP38]], i32 0, i32 2
+// CHECK-NEXT:    [[WIDE_PTR_LB44:%.*]] = load ptr, ptr [[WIDE_PTR_LB_ADDR43]], align 8
+// CHECK-NEXT:    ret ptr [[WIDE_PTR_PTR40]]
 //
 int * __counted_by_or_null(len) foo(int * __bidi_indexable p, int len) {
     return p;
 }
 
-// CHECK-LABEL: define dso_local void @foo_assign
-// CHECK-SAME: (ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0]] {
+// CHECK-LABEL: define dso_local void @foo_assign(
+// CHECK-SAME: ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[P_INDIRECT_ADDR:%.*]] = alloca ptr, align 8
 // CHECK-NEXT:    [[LEN_ADDR:%.*]] = alloca i32, align 4
@@ -47,7 +124,7 @@ int * __counted_by_or_null(len) foo(int * __bidi_indexable p, int len) {
 // CHECK-NEXT:    store i32 [[TMP0]], ptr [[SIZE]], align 4
 // CHECK-NEXT:    [[TMP1:%.*]] = load i32, ptr [[SIZE]], align 4
 // CHECK-NEXT:    [[CONV:%.*]] = sext i32 [[TMP1]] to i64
-// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2:![0-9]+]]
+// CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP]], ptr align 8 [[P]], i64 24, i1 false), !annotation [[META2]]
 // CHECK-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0, !annotation [[META2]]
 // CHECK-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8, !annotation [[META2]]
 // CHECK-NEXT:    [[WIDE_PTR_UB_ADDR:%.*]] = getelementptr inbounds %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 1, !annotation [[META2]]
@@ -112,7 +189,7 @@ int * __counted_by_or_null(len) foo(int * __bidi_indexable p, int len) {
 // CHECK-NEXT:    [[TMP4:%.*]] = phi i1 [ false, [[LAND_LHS_TRUE]] ], [ false, [[ENTRY:%.*]] ], [ [[TMP3]], [[LOR_END]] ], !annotation [[META2]]
 // CHECK-NEXT:    br i1 [[TMP4]], label [[CONT:%.*]], label [[TRAP:%.*]], !annotation [[META2]]
 // CHECK:       trap:
-// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR4:[0-9]+]], !annotation [[META2]]
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR4]], !annotation [[META2]]
 // CHECK-NEXT:    unreachable, !annotation [[META2]]
 // CHECK:       cont:
 // CHECK-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[AGG_TEMP40]], ptr align 8 [[P]], i64 24, i1 false)
@@ -130,8 +207,8 @@ void foo_assign(int * __bidi_indexable p, int len) {
     int * __counted_by_or_null(size) p2 = p;
 }
 
-// CHECK-LABEL: define dso_local void @bar
-// CHECK-SAME: (ptr dead_on_unwind noalias writable sret(%"__bounds_safety::wide_ptr.bidi_indexable") align 8 [[AGG_RESULT:%.*]], ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0]] {
+// CHECK-LABEL: define dso_local void @bar(
+// CHECK-SAME: ptr dead_on_unwind noalias writable sret(%"__bounds_safety::wide_ptr.bidi_indexable") align 8 [[AGG_RESULT:%.*]], ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[P_ADDR:%.*]] = alloca ptr, align 8
 // CHECK-NEXT:    [[LEN_ADDR:%.*]] = alloca i32, align 4
@@ -166,8 +243,8 @@ int * __bidi_indexable bar(int * __counted_by_or_null(len) p, int len) {
     return p;
 }
 
-// CHECK-LABEL: define dso_local void @bar_assign
-// CHECK-SAME: (ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0]] {
+// CHECK-LABEL: define dso_local void @bar_assign(
+// CHECK-SAME: ptr noundef [[P:%.*]], i32 noundef [[LEN:%.*]]) #[[ATTR0]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[P_ADDR:%.*]] = alloca ptr, align 8
 // CHECK-NEXT:    [[LEN_ADDR:%.*]] = alloca i32, align 4
@@ -203,8 +280,8 @@ void bar_assign(int * __counted_by_or_null(len) p, int len) {
     int * __bidi_indexable p2 = p;
 }
 
-// CHECK-LABEL: define dso_local void @ptr_oob
-// CHECK-SAME: () #[[ATTR0]] {
+// CHECK-LABEL: define dso_local void @ptr_oob(
+// CHECK-SAME: ) #[[ATTR0]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[X:%.*]] = alloca i32, align 4
 // CHECK-NEXT:    [[P:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
@@ -323,8 +400,8 @@ void ptr_oob(void) {
   int *__counted_by_or_null(4) q = p;
 }
 
-// CHECK-LABEL: define dso_local void @null_count_neg
-// CHECK-SAME: (ptr dead_on_unwind noalias writable sret(%"__bounds_safety::wide_ptr.bidi_indexable") align 8 [[AGG_RESULT:%.*]]) #[[ATTR0]] {
+// CHECK-LABEL: define dso_local void @null_count_neg(
+// CHECK-SAME: ptr dead_on_unwind noalias writable sret(%"__bounds_safety::wide_ptr.bidi_indexable") align 8 [[AGG_RESULT:%.*]]) #[[ATTR0]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[P:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
 // CHECK-NEXT:    [[COUNT:%.*]] = alloca i32, align 4
@@ -452,8 +529,8 @@ int *__bidi_indexable null_count_neg(void) {
   return q;
 }
 
-// CHECK-LABEL: define dso_local void @null_count_too_big
-// CHECK-SAME: (ptr dead_on_unwind noalias writable sret(%"__bounds_safety::wide_ptr.bidi_indexable") align 8 [[AGG_RESULT:%.*]]) #[[ATTR0]] {
+// CHECK-LABEL: define dso_local void @null_count_too_big(
+// CHECK-SAME: ptr dead_on_unwind noalias writable sret(%"__bounds_safety::wide_ptr.bidi_indexable") align 8 [[AGG_RESULT:%.*]]) #[[ATTR0]] {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[P:%.*]] = alloca %"__bounds_safety::wide_ptr.bidi_indexable", align 8
 // CHECK-NEXT:    [[COUNT:%.*]] = alloca i32, align 4
@@ -581,8 +658,3 @@ int *__bidi_indexable null_count_too_big(void) {
   return q;
 }
 
-//.
-// CHECK: [[META2]] = !{!"bounds-safety-generic"}
-// CHECK: [[META3]] = !{!"bounds-safety-check-ptr-neq-null"}
-// CHECK: [[META4]] = !{!"bounds-safety-zero-init"}
-//.

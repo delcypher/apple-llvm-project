@@ -50,7 +50,7 @@ char access(struct Outer *bar, int index) {
 // CHECK-NEXT:    [[AGG_TEMP1_SROA_3_0_BAR_SROA_IDX:%.*]] = getelementptr inbounds i8, ptr [[BAR]], i64 16
 // CHECK-NEXT:    [[AGG_TEMP1_SROA_3_0_COPYLOAD:%.*]] = load ptr, ptr [[AGG_TEMP1_SROA_3_0_BAR_SROA_IDX]], align 8, !tbaa [[TBAA11:![0-9]+]]
 // CHECK-NEXT:    [[FLEX_BASE_NULL_CHECK_NOT:%.*]] = icmp eq ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]], null, !annotation [[META13:![0-9]+]]
-// CHECK-NEXT:    br i1 [[FLEX_BASE_NULL_CHECK_NOT]], label [[CONT46:%.*]], label [[FLEX_BASE_NONNULL:%.*]], !annotation [[META13]]
+// CHECK-NEXT:    br i1 [[FLEX_BASE_NULL_CHECK_NOT]], label [[CONT48:%.*]], label [[FLEX_BASE_NONNULL:%.*]], !annotation [[META13]]
 // CHECK:       flex.base.nonnull:
 // CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]], i64 8
 // CHECK-NEXT:    [[DOTNOT:%.*]] = icmp ugt ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]], [[TMP0]], !annotation [[META14:![0-9]+]]
@@ -70,16 +70,14 @@ char access(struct Outer *bar, int index) {
 // CHECK-NEXT:    [[FLEX_AVAIL_COUNT:%.*]] = sub nuw i64 [[UPPER_INTPTR]], [[FAM_INTPTR]], !annotation [[META17]]
 // CHECK-NEXT:    [[FLEX_COUNT_INTPTR:%.*]] = zext nneg i32 [[LEN]] to i64, !annotation [[META17]]
 // CHECK-NEXT:    [[FLEX_COUNT_CHECK:%.*]] = icmp uge i64 [[FLEX_AVAIL_COUNT]], [[FLEX_COUNT_INTPTR]], !annotation [[META17]]
-// CHECK-NEXT:    [[OR_COND49:%.*]] = select i1 [[FLEX_COUNT_MINUS]], i1 [[FLEX_COUNT_CHECK]], i1 false, !annotation [[META17]]
-// CHECK-NEXT:    [[TMP3:%.*]] = icmp ult ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]], [[AGG_TEMP1_SROA_2_0_COPYLOAD]], !annotation [[META7]]
-// CHECK-NEXT:    [[OR_COND60:%.*]] = select i1 [[OR_COND49]], i1 [[TMP3]], i1 false, !annotation [[META7]]
-// CHECK-NEXT:    br i1 [[OR_COND60]], label [[BOUNDSCHECK_CONT:%.*]], label [[TRAP]], !annotation [[META16]]
-// CHECK:       boundscheck.cont:
-// CHECK-NEXT:    [[LEN31:%.*]] = getelementptr inbounds i8, ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]], i64 4
-// CHECK-NEXT:    br label [[CONT46]], !annotation [[META13]]
-// CHECK:       cont46:
-// CHECK-NEXT:    [[LEN31_SINK:%.*]] = phi ptr [ [[LEN31]], [[BOUNDSCHECK_CONT]] ], [ inttoptr (i64 4 to ptr), [[ENTRY:%.*]] ]
-// CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN31_SINK]], align 4, !tbaa [[TBAA2]]
+// CHECK-NEXT:    [[OR_COND51:%.*]] = select i1 [[FLEX_COUNT_MINUS]], i1 [[FLEX_COUNT_CHECK]], i1 false, !annotation [[META17]]
+// CHECK-NEXT:    br i1 [[OR_COND51]], label [[BOUNDSCHECK_NOTNULL45:%.*]], label [[TRAP]], !annotation [[META16]]
+// CHECK:       boundscheck.notnull45:
+// CHECK-NEXT:    [[LEN32:%.*]] = getelementptr inbounds i8, ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]], i64 4
+// CHECK-NEXT:    br label [[CONT48]]
+// CHECK:       cont48:
+// CHECK-NEXT:    [[LEN32_SINK:%.*]] = phi ptr [ [[LEN32]], [[BOUNDSCHECK_NOTNULL45]] ], [ inttoptr (i64 4 to ptr), [[ENTRY:%.*]] ]
+// CHECK-NEXT:    store i32 [[LEN]], ptr [[LEN32_SINK]], align 4, !tbaa [[TBAA2]]
 // CHECK-NEXT:    ret ptr [[AGG_TEMP1_SROA_0_0_COPYLOAD]]
 //
 struct Outer * assign(void * __bidi_indexable bar, int len) {

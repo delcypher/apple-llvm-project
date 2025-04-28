@@ -13,7 +13,7 @@ static const struct {
 };
 
 // CHECK-LABEL: @good(
-// CHECK-NEXT:  cont8.2:
+// CHECK-NEXT:  cont9.2:
 // CHECK-NEXT:    ret ptr getelementptr inbounds (i8, ptr @foo, i64 4)
 //
 const int *__terminated_by(3) good(void) {
@@ -22,7 +22,7 @@ const int *__terminated_by(3) good(void) {
 }
 
 // CHECK-LABEL: @good_2(
-// CHECK-NEXT:  cont8.1:
+// CHECK-NEXT:  cont9.1:
 // CHECK-NEXT:    ret ptr getelementptr inbounds (i8, ptr @foo, i64 4)
 //
 const int *__terminated_by(2) good_2(void) {

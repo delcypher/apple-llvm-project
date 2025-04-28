@@ -27,21 +27,8 @@ void wide_array_subscript_trap1() {
 
 // CHECK-LABEL: @wide_array_subscript_trap2(
 // CHECK-NEXT:  entry:
-// CHECK-NEXT:    [[ARR:%.*]] = alloca [5 x %"__bounds_safety::wide_ptr.indexable"], align 8
-// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 80, ptr nonnull [[ARR]]) #[[ATTR7:[0-9]+]]
-// CHECK-NEXT:    call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(80) [[ARR]], i8 0, i64 80, i1 false), {{!annotation ![0-9]+}}
-// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 80
-// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[ARR]], i64 -16
-// CHECK-NEXT:    [[TMP1:%.*]] = icmp ult ptr [[TMP0]], [[UPPER]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    [[TMP2:%.*]] = icmp uge ptr [[TMP0]], [[ARR]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT1:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
-// CHECK:       trap:
-// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR6]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR6]], {{!annotation ![0-9]+}}
 // CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
-// CHECK:       cont1:
-// CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 80, ptr nonnull [[ARR]]) #[[ATTR7]]
-// CHECK-NEXT:    ret void
 //
 void wide_array_subscript_trap2() {
   int *__indexable arr[5];
@@ -117,7 +104,7 @@ void wide_member_assign_ok() {
 // CHECK-LABEL: @wide_member_assign_trap(
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[W:%.*]] = alloca [[STRUCT_WIDE_MEMBER_T:%.*]], align 8
-// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 24, ptr nonnull [[W]]) #[[ATTR7]]
+// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 24, ptr nonnull [[W]]) #[[ATTR7:[0-9]+]]
 // CHECK-NEXT:    call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) [[W]], i8 0, i64 24, i1 false), {{!annotation ![0-9]+}}
 // CHECK-NEXT:    [[TMP0:%.*]] = getelementptr inbounds i8, ptr [[W]], i64 24
 // CHECK-NEXT:    [[TMP1:%.*]] = getelementptr i8, ptr [[W]], i64 48

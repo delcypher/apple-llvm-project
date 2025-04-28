@@ -15,17 +15,17 @@ typedef struct {
 // CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 20, ptr nonnull [[ARR]]) #[[ATTR7:[0-9]+]]
 // CHECK-NEXT:    [[BOUND_PTR_ARITH:%.*]] = getelementptr i8, ptr [[ARR]], i64 -1
 // CHECK-NEXT:    [[DOTNOT:%.*]] = icmp eq ptr [[BOUND_PTR_ARITH]], null, {{!annotation ![0-9]+}}
-// CHECK-NEXT:    br i1 [[DOTNOT]], label [[CONT8:%.*]], label [[BOUNDSCHECK_NOTNULL:%.*]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[DOTNOT]], label [[CONT9:%.*]], label [[BOUNDSCHECK_NOTNULL:%.*]], {{!annotation ![0-9]+}}
 // CHECK:       boundscheck.notnull:
-// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 20
-// CHECK-NEXT:    [[TMP0:%.*]] = icmp ult ptr [[BOUND_PTR_ARITH]], [[UPPER]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    [[TMP1:%.*]] = icmp uge ptr [[BOUND_PTR_ARITH]], [[ARR]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP0]], [[TMP1]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT8]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 3, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[BOUND_PTR_ARITH]], [[TMP0]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp uge ptr [[BOUND_PTR_ARITH]], [[ARR]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND10:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND10]], label [[CONT9]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
 // CHECK:       trap:
 // CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8:[0-9]+]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
-// CHECK:       cont8:
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont9:
 // CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 20, ptr nonnull [[ARR]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
 //
@@ -55,7 +55,7 @@ void test_under_base_ok() {
 // CHECK-NEXT:    br i1 [[DOTNOT]], label [[TRAP:%.*]], label [[CONT8:%.*]], {{!annotation ![0-9]+}}
 // CHECK:       trap:
 // CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 // CHECK:       cont8:
 // CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 20, ptr nonnull [[ARR]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
@@ -71,7 +71,7 @@ void test_under_base_fail2() {
 // CHECK-LABEL: @test_over_base_fail(
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 //
 void test_over_base_fail() {
   char arr[20];
@@ -99,7 +99,7 @@ void test_over_base_ok() {
 // CHECK-NEXT:    br i1 [[DOTNOT]], label [[TRAP:%.*]], label [[CONT8:%.*]], {{!annotation ![0-9]+}}
 // CHECK:       trap:
 // CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 // CHECK:       cont8:
 // CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 20, ptr nonnull [[ARR]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
@@ -114,6 +114,19 @@ void test_over_base_fail2() {
 // FIXME: rdar://84809738
 // CHECK-LABEL: @test_small_base_fail(
 // CHECK-NEXT:  entry:
+// CHECK-NEXT:    [[ARR:%.*]] = alloca [3 x i8], align 1
+// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 3, ptr nonnull [[ARR]]) #[[ATTR7]]
+// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 3
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[ARR]], i64 4, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[TMP0]], [[UPPER]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[ARR]], [[TMP0]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT9:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont9:
+// CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 3, ptr nonnull [[ARR]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
 //
 void test_small_base_fail(flex_t *flex) {
@@ -132,6 +145,19 @@ void test_small_base_ok() {
 
 // CHECK-LABEL: @test_small_base_fail2(
 // CHECK-NEXT:  entry:
+// CHECK-NEXT:    [[ARR:%.*]] = alloca [3 x i8], align 1
+// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 3, ptr nonnull [[ARR]]) #[[ATTR7]]
+// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 3
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[ARR]], i64 4, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[TMP0]], [[UPPER]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[ARR]], [[TMP0]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT9:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont9:
+// CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 3, ptr nonnull [[ARR]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
 //
 void test_small_base_fail2() {
@@ -170,6 +196,19 @@ void test_count_from_buf_ok2(flex_t *flex) {
 // FIXME: rdar://84809738
 // CHECK-LABEL: @test_count_from_buf_fail(
 // CHECK-NEXT:  entry:
+// CHECK-NEXT:    [[ARR:%.*]] = alloca [3 x i8], align 1
+// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 3, ptr nonnull [[ARR]]) #[[ATTR7]]
+// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[ARR]], i64 3
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[ARR]], i64 4, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[TMP0]], [[UPPER]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[ARR]], [[TMP0]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT9:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont9:
+// CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 3, ptr nonnull [[ARR]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
 //
 void test_count_from_buf_fail() {
@@ -190,7 +229,7 @@ void test_base_count_ok(flex_t *__single flex) {
 // CHECK-LABEL: @test_base_fam_access_fail(
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 //
 void test_base_fam_access_fail(flex_t *__single flex) {
   char arr[20];
@@ -201,7 +240,7 @@ void test_base_fam_access_fail(flex_t *__single flex) {
 // CHECK-LABEL: @test_base_fam_access_fail2(
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 //
 void test_base_fam_access_fail2(flex_t *__single flex) {
   char arr[20];
@@ -230,7 +269,7 @@ void test_null_base_ok(flex_t *__single flex) {
 // CHECK-LABEL: @test_null_base_fam_access_fail(
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
-// CHECK-NEXT:    unreachable
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
 //
 void test_null_base_fam_access_fail(flex_t *__single flex) {
   flex = 0;
@@ -256,6 +295,19 @@ void test_flex_init_list_ok() {
 // FIXME: rdar://84809738
 // CHECK-LABEL: @test_flex_init_list_fail(
 // CHECK-NEXT:  entry:
+// CHECK-NEXT:    [[BUF:%.*]] = alloca [3 x i8], align 1
+// CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 3, ptr nonnull [[BUF]]) #[[ATTR7]]
+// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[BUF]], i64 3
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[BUF]], i64 4, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[TMP0]], [[UPPER]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[BUF]], [[TMP0]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT10:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont10:
+// CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 3, ptr nonnull [[BUF]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void
 //
 void test_flex_init_list_fail() {
@@ -285,6 +337,16 @@ void test_flex_argument_ok() {
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[BUF:%.*]] = alloca [3 x i8], align 1
 // CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 3, ptr nonnull [[BUF]]) #[[ATTR7]]
+// CHECK-NEXT:    [[UPPER:%.*]] = getelementptr inbounds i8, ptr [[BUF]], i64 3
+// CHECK-NEXT:    [[TMP0:%.*]] = getelementptr i8, ptr [[BUF]], i64 4, {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP1:%.*]] = icmp ule ptr [[TMP0]], [[UPPER]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[TMP2:%.*]] = icmp ule ptr [[BUF]], [[TMP0]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    [[OR_COND:%.*]] = and i1 [[TMP1]], [[TMP2]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[OR_COND]], label [[CONT10:%.*]], label [[TRAP:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR8]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont10:
 // CHECK-NEXT:    call void @sink(ptr noundef nonnull [[BUF]]) #[[ATTR7]]
 // CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 3, ptr nonnull [[BUF]]) #[[ATTR7]]
 // CHECK-NEXT:    ret void

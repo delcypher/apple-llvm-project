@@ -97,7 +97,7 @@ void caller_6(int *__sized_by(len) p, int len) {
 // CHECK-NEXT:    br i1 [[CMP_NOT]], label [[TRAP:%.*]], label [[LAND_LHS_TRUE:%.*]], !annotation [[META3]]
 // CHECK:       land.lhs.true:
 // CHECK-NEXT:    [[AGG_TEMP_SROA_17_0_P_SROA_IDX:%.*]] = getelementptr inbounds i8, ptr [[P]], i64 16
-// CHECK-NEXT:    [[AGG_TEMP_SROA_17_0_COPYLOAD:%.*]] = load ptr, ptr [[AGG_TEMP_SROA_17_0_P_SROA_IDX]], align 8, !tbaa [[TBAA9:![0-9]+]]
+// CHECK-NEXT:    [[AGG_TEMP_SROA_17_0_COPYLOAD:%.*]] = load ptr, ptr [[AGG_TEMP_SROA_17_0_P_SROA_IDX]], align 8, !tbaa [[TBAA8:![0-9]+]]
 // CHECK-NEXT:    [[CMP27_NOT:%.*]] = icmp ugt ptr [[AGG_TEMP_SROA_17_0_COPYLOAD]], [[AGG_TEMP_SROA_0_0_COPYLOAD]], !annotation [[META3]]
 // CHECK-NEXT:    br i1 [[CMP27_NOT]], label [[TRAP]], label [[LAND_RHS:%.*]], !annotation [[META3]]
 // CHECK:       land.rhs:
@@ -107,7 +107,7 @@ void caller_6(int *__sized_by(len) p, int len) {
 // CHECK-NEXT:    [[CONV:%.*]] = sext i32 [[LEN]] to i64, !annotation [[META3]]
 // CHECK-NEXT:    [[SUB_PTR_LHS_CAST:%.*]] = ptrtoint ptr [[AGG_TEMP_SROA_9_0_COPYLOAD]] to i64, !annotation [[META3]]
 // CHECK-NEXT:    [[SUB_PTR_RHS_CAST:%.*]] = ptrtoint ptr [[AGG_TEMP_SROA_0_0_COPYLOAD]] to i64, !annotation [[META3]]
-// CHECK-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]], !annotation [[META13:![0-9]+]]
+// CHECK-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]], !annotation [[META10:![0-9]+]]
 // CHECK-NEXT:    [[CMP65:%.*]] = icmp sge i64 [[SUB_PTR_SUB]], [[CONV]], !annotation [[META3]]
 // CHECK-NEXT:    [[CMP68:%.*]] = icmp sgt i32 [[LEN]], -1, !annotation [[META3]]
 // CHECK-NEXT:    [[SPEC_SELECT:%.*]] = and i1 [[CMP68]], [[CMP65]]
@@ -159,27 +159,27 @@ void caller_9(int *__sized_by(*len) *out, int *len){
 // CHECK-NEXT:    [[COUNT:%.*]] = alloca i32, align 4
 // CHECK-NEXT:    [[P:%.*]] = alloca ptr, align 8
 // CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 4, ptr nonnull [[COUNT]]) #[[ATTR5]]
-// CHECK-NEXT:    store i32 0, ptr [[COUNT]], align 4, !annotation [[META15:![0-9]+]]
+// CHECK-NEXT:    store i32 0, ptr [[COUNT]], align 4, !annotation [[META12:![0-9]+]]
 // CHECK-NEXT:    call void @llvm.lifetime.start.p0(i64 8, ptr nonnull [[P]]) #[[ATTR5]]
-// CHECK-NEXT:    store ptr null, ptr [[P]], align 8, !annotation [[META15]]
+// CHECK-NEXT:    store ptr null, ptr [[P]], align 8, !annotation [[META12]]
 // CHECK-NEXT:    call void @bar(ptr noundef nonnull [[P]], ptr noundef nonnull [[COUNT]]) #[[ATTR5]]
-// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr [[P]], align 8, !tbaa [[TBAA9]]
+// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr [[P]], align 8, !tbaa [[TBAA8]]
 // CHECK-NEXT:    [[DOTNOT:%.*]] = icmp ne ptr [[TMP0]], null, !annotation [[META2]]
 // CHECK-NEXT:    [[TMP1:%.*]] = load i32, ptr [[COUNT]], align 4
-// CHECK-NEXT:    [[CMP_NOT90:%.*]] = icmp slt i32 [[TMP1]], 0, !annotation [[META3]]
-// CHECK-NEXT:    [[CMP_NOT:%.*]] = select i1 [[DOTNOT]], i1 [[CMP_NOT90]], i1 false, !annotation [[META3]]
+// CHECK-NEXT:    [[CMP_NOT172:%.*]] = icmp slt i32 [[TMP1]], 0, !annotation [[META3]]
+// CHECK-NEXT:    [[CMP_NOT:%.*]] = select i1 [[DOTNOT]], i1 [[CMP_NOT172]], i1 false, !annotation [[META3]]
 // CHECK-NEXT:    br i1 [[CMP_NOT]], label [[TRAP:%.*]], label [[LAND_RHS:%.*]], !annotation [[META3]]
 // CHECK:       trap:
-// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR6]], !annotation [[META16:![0-9]+]]
-// CHECK-NEXT:    unreachable, !annotation [[META16]]
+// CHECK-NEXT:    call void @llvm.ubsantrap(i8 25) #[[ATTR6]], !annotation [[META13:![0-9]+]]
+// CHECK-NEXT:    unreachable, !annotation [[META13]]
 // CHECK:       land.rhs:
-// CHECK-NEXT:    br i1 [[DOTNOT]], label [[LOR_RHS:%.*]], label [[CONT67:%.*]], !annotation [[META3]]
+// CHECK-NEXT:    br i1 [[DOTNOT]], label [[LOR_RHS:%.*]], label [[CONT146:%.*]], !annotation [[META3]]
 // CHECK:       lor.rhs:
-// CHECK-NEXT:    [[CMP61:%.*]] = icmp sge i32 [[TMP1]], [[LEN]], !annotation [[META3]]
-// CHECK-NEXT:    [[CMP64:%.*]] = icmp sgt i32 [[LEN]], -1, !annotation [[META3]]
-// CHECK-NEXT:    [[SPEC_SELECT:%.*]] = and i1 [[CMP64]], [[CMP61]]
-// CHECK-NEXT:    br i1 [[SPEC_SELECT]], label [[CONT67]], label [[TRAP]], !annotation [[META3]]
-// CHECK:       cont67:
+// CHECK-NEXT:    [[CMP63:%.*]] = icmp sge i32 [[TMP1]], [[LEN]], !annotation [[META3]]
+// CHECK-NEXT:    [[CMP66:%.*]] = icmp sgt i32 [[LEN]], -1, !annotation [[META3]]
+// CHECK-NEXT:    [[SPEC_SELECT:%.*]] = and i1 [[CMP66]], [[CMP63]]
+// CHECK-NEXT:    br i1 [[SPEC_SELECT]], label [[CONT146]], label [[TRAP]], !annotation [[META3]]
+// CHECK:       cont146:
 // CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 8, ptr nonnull [[P]]) #[[ATTR5]]
 // CHECK-NEXT:    call void @llvm.lifetime.end.p0(i64 4, ptr nonnull [[COUNT]]) #[[ATTR5]]
 // CHECK-NEXT:    ret ptr [[TMP0]]
@@ -200,10 +200,10 @@ int *__sized_by_or_null(len) caller_10(int len) {
 // CHECK: [[META5]] = !{!"int", [[META6:![0-9]+]], i64 0}
 // CHECK: [[META6]] = !{!"omnipotent char", [[META7:![0-9]+]], i64 0}
 // CHECK: [[META7]] = !{!"Simple C/C++ TBAA"}
-// CHECK: [[TBAA9]] = !{[[META10:![0-9]+]], [[META10]], i64 0}
-// CHECK: [[META10]] = !{!"any pointer", [[META6]], i64 0}
-// CHECK: [[META13]] = !{!"bounds-safety-generic", [[META14:![0-9]+]]}
-// CHECK: [[META14]] = !{!"bounds-safety-missed-optimization-nsw", !"Check can not be removed because the arithmetic operation might wrap in the signed sense. Optimize the check by adding conditions to check for overflow before doing the operation"}
-// CHECK: [[META15]] = !{!"bounds-safety-zero-init"}
-// CHECK: [[META16]] = !{!"bounds-safety-check-ptr-lt-upper-bound", !"bounds-safety-check-ptr-ge-lower-bound", !"bounds-safety-generic"}
+// CHECK: [[TBAA8]] = !{[[META9:![0-9]+]], [[META9]], i64 0}
+// CHECK: [[META9]] = !{!"any pointer", [[META6]], i64 0}
+// CHECK: [[META10]] = !{!"bounds-safety-generic", [[META11:![0-9]+]]}
+// CHECK: [[META11]] = !{!"bounds-safety-missed-optimization-nsw", !"Check can not be removed because the arithmetic operation might wrap in the signed sense. Optimize the check by adding conditions to check for overflow before doing the operation"}
+// CHECK: [[META12]] = !{!"bounds-safety-zero-init"}
+// CHECK: [[META13]] = !{!"bounds-safety-check-ptr-le-upper-bound", !"bounds-safety-check-ptr-ge-lower-bound", !"bounds-safety-generic"}
 //.

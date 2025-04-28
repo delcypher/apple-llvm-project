@@ -14,6 +14,13 @@ struct __attribute__((packed)) foo {
 // CHECK-LABEL: @p(
 // CHECK-NEXT:  entry:
 // CHECK-NEXT:    [[TMP0:%.*]] = getelementptr inbounds i8, ptr [[S:%.*]], i64 4
+// CHECK-NEXT:    [[TMP1:%.*]] = getelementptr i8, ptr [[S]], i64 8
+// CHECK-NEXT:    [[DOTNOT:%.*]] = icmp ugt ptr [[TMP0]], [[TMP1]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    br i1 [[DOTNOT]], label [[TRAP:%.*]], label [[CONT2:%.*]], {{!annotation ![0-9]+}}
+// CHECK:       trap:
+// CHECK-NEXT:    tail call void @llvm.ubsantrap(i8 25) #[[ATTR2:[0-9]+]], {{!annotation ![0-9]+}}
+// CHECK-NEXT:    unreachable, {{!annotation ![0-9]+}}
+// CHECK:       cont2:
 // CHECK-NEXT:    ret ptr [[TMP0]]
 //
 unsigned *p(struct foo *s) {
