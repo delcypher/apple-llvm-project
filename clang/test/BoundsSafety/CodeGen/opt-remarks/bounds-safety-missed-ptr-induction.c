@@ -76,9 +76,9 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '7'
 // OPT-REM-NEXT:   - String:          ' instructions with '
-// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-lt-upper-bound
+// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-le-upper-bound
 // OPT-REM-NEXT: ...
 
 // OPT-REM-NEXT: --- !Analysis
@@ -102,7 +102,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '2'
+// OPT-REM-NEXT:   - count:           '3'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-missed-optimization-phi-step-size
 // OPT-REM-NEXT: ...
@@ -115,7 +115,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '13'
+// OPT-REM-NEXT:   - count:           '16'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-total-summary
 // OPT-REM-NEXT: ...
@@ -206,7 +206,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-lt-upper-bound, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-le-upper-bound, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
@@ -223,19 +223,22 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Inserted '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '7'
 // OPT-REM-NEXT:   - String:          ' LLVM IR instruction'
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-lt-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-le-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT:       instructions:
 // OPT-REM-EMPTY: 
 // OPT-REM-NEXT:   - String:           |
-// OPT-REM-NEXT:       cmp ult (LLVM IR 'icmp')
+// OPT-REM-NEXT:       other (LLVM IR 'getelementptr')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cmp uge (LLVM IR 'icmp')
 // OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cond branch (LLVM IR 'br')
@@ -278,9 +281,9 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign_2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '6'
 // OPT-REM-NEXT:   - String:          ' instructions with '
-// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-lt-upper-bound
+// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-le-upper-bound
 // OPT-REM-NEXT: ...
 
 // OPT-REM-NEXT: --- !Analysis
@@ -304,7 +307,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign_2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '2'
+// OPT-REM-NEXT:   - count:           '3'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-missed-optimization-phi-step-size
 // OPT-REM-NEXT: ...
@@ -317,7 +320,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign_2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '13'
+// OPT-REM-NEXT:   - count:           '15'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-total-summary
 // OPT-REM-NEXT: ...
@@ -408,7 +411,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-lt-upper-bound, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-le-upper-bound, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
@@ -425,19 +428,21 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_sign_2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Inserted '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '6'
 // OPT-REM-NEXT:   - String:          ' LLVM IR instruction'
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-lt-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-le-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT:       instructions:
 // OPT-REM-EMPTY: 
 // OPT-REM-NEXT:   - String:           |
-// OPT-REM-NEXT:       cmp ult (LLVM IR 'icmp')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cmp uge (LLVM IR 'icmp')
 // OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cond branch (LLVM IR 'br')
@@ -480,9 +485,9 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '7'
 // OPT-REM-NEXT:   - String:          ' instructions with '
-// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-lt-upper-bound
+// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-le-upper-bound
 // OPT-REM-NEXT: ...
 
 // OPT-REM-NEXT: --- !Analysis
@@ -506,7 +511,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '2'
+// OPT-REM-NEXT:   - count:           '3'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-missed-optimization-phi-step-size
 // OPT-REM-NEXT: ...
@@ -519,7 +524,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '13'
+// OPT-REM-NEXT:   - count:           '16'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-total-summary
 // OPT-REM-NEXT: ...
@@ -634,7 +639,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-lt-upper-bound, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-le-upper-bound, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
@@ -651,19 +656,22 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Inserted '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '7'
 // OPT-REM-NEXT:   - String:          ' LLVM IR instruction'
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-lt-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-le-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT:       instructions:
 // OPT-REM-EMPTY: 
 // OPT-REM-NEXT:   - String:           |
-// OPT-REM-NEXT:       cmp ult (LLVM IR 'icmp')
+// OPT-REM-NEXT:       other (LLVM IR 'getelementptr')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cmp uge (LLVM IR 'icmp')
 // OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cond branch (LLVM IR 'br')
@@ -706,9 +714,9 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '7'
 // OPT-REM-NEXT:   - String:          ' instructions with '
-// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-lt-upper-bound
+// OPT-REM-NEXT:   - type:            bounds-safety-check-ptr-le-upper-bound
 // OPT-REM-NEXT: ...
 
 // OPT-REM-NEXT: --- !Analysis
@@ -732,7 +740,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '2'
+// OPT-REM-NEXT:   - count:           '3'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-missed-optimization-phi-step-size
 // OPT-REM-NEXT: ...
@@ -745,7 +753,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Annotated '
-// OPT-REM-NEXT:   - count:           '13'
+// OPT-REM-NEXT:   - count:           '16'
 // OPT-REM-NEXT:   - String:          ' instructions with '
 // OPT-REM-NEXT:   - type:            bounds-safety-total-summary
 // OPT-REM-NEXT: ...
@@ -860,7 +868,7 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-lt-upper-bound, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-generic, bounds-safety-check-ptr-le-upper-bound, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
@@ -877,19 +885,22 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: Function:        ptr_induction_different_step_size2
 // OPT-REM-NEXT: Args:
 // OPT-REM-NEXT:   - String:          'Inserted '
-// OPT-REM-NEXT:   - count:           '4'
+// OPT-REM-NEXT:   - count:           '7'
 // OPT-REM-NEXT:   - String:          ' LLVM IR instruction'
 // OPT-REM-NEXT:   - String:          s
 // OPT-REM-NEXT:   - String:          "\n"
 // OPT-REM-NEXT:   - String:          "used for:\n"
-// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-lt-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
+// OPT-REM-NEXT:   - String:          bounds-safety-check-ptr-le-upper-bound, bounds-safety-missed-optimization-phi-step-size, bounds-safety-check-ptr-ge-lower-bound
 // OPT-REM-NEXT:   - String:           |
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT: {{^[ 	]+$}}
 // OPT-REM-NEXT:       instructions:
 // OPT-REM-EMPTY: 
 // OPT-REM-NEXT:   - String:           |
-// OPT-REM-NEXT:       cmp ult (LLVM IR 'icmp')
+// OPT-REM-NEXT:       other (LLVM IR 'getelementptr')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       cmp ule (LLVM IR 'icmp')
+// OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cmp uge (LLVM IR 'icmp')
 // OPT-REM-NEXT:       and (LLVM IR 'and')
 // OPT-REM-NEXT:       cond branch (LLVM IR 'br')
@@ -899,3 +910,4 @@ void ptr_induction_different_step_size2(int* __indexable A, int N) {
 // OPT-REM-NEXT: ...
 
 // OPT-REM-NOT: --- !Analysis
+
