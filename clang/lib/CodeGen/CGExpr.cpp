@@ -32,6 +32,7 @@
 #include "clang/AST/StmtVisitor.h"
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/CodeGenOptions.h"
+#include "clang/Basic/DiagnosticParse.h"
 #include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/ADT/STLExtras.h"
@@ -3756,6 +3757,15 @@ void CodeGenFunction::EmitCheck(
 
     if (!CGM.getCodeGenOpts().SanitizeMergeHandlers.has(Ord))
       NoMerge = true;
+  }
+
+  // Hack
+  {
+    // trap_ubsan_add
+    // auto RT = CGM.RuntimeDiag(diag::warn_empty_init_statement);
+    std::string Message;
+    CGM.RuntimeDiag(diag::trap_ubsan_add, Message) << 0 << "some_type";
+    llvm::errs() << "HACK:" << Message << "\n";
   }
 
   if (TrapCond)

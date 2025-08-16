@@ -23,6 +23,7 @@
 #include "clang/AST/GlobalDecl.h"
 #include "clang/AST/Mangle.h"
 #include "clang/Basic/ABI.h"
+#include "clang/Basic/DiagnosticCodeGen.h" // For runtime trap diagnostics
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/NoSanitizeList.h"
 #include "clang/Basic/ProfileList.h"
@@ -1822,6 +1823,13 @@ public:
                           ? 32
                           : getTarget().getPointerAlign(AS);
     return PAlign;
+  }
+
+  /// Create a Trap diagnostic.
+  /// TODO document.
+  [[nodiscard]] RuntimeTrapDiagnosticBuilder RuntimeDiag(unsigned DiagID,
+                                                         std::string &Out) {
+    return RuntimeTrapDiagnosticBuilder(&getDiags(), DiagID, Out);
   }
 
 private:

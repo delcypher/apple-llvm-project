@@ -1233,6 +1233,7 @@ class DiagnosticBuilder : public StreamingDiagnostic {
   friend class DiagnosticsEngine;
   friend class PartialDiagnostic;
   friend class Diagnostic;
+  friend class RuntimeTrapDiagnosticBuilder;
 
   mutable DiagnosticsEngine *DiagObj = nullptr;
 
@@ -1533,6 +1534,30 @@ const StreamingDiagnostic &operator<<(const StreamingDiagnostic &DB,
 inline DiagnosticBuilder DiagnosticsEngine::Report(unsigned DiagID) {
   return Report(SourceLocation(), DiagID);
 }
+
+//===----------------------------------------------------------------------===//
+// Runtime Diagnostic
+//===----------------------------------------------------------------------===//
+
+class RuntimeTrapDiagnosticBuilder : public DiagnosticBuilder {
+public:
+  RuntimeTrapDiagnosticBuilder(DiagnosticsEngine *DiagObj, unsigned DiagID,
+                               std::string &TrapDiagOut);
+  ~RuntimeTrapDiagnosticBuilder();
+
+  RuntimeTrapDiagnosticBuilder &
+  operator=(const RuntimeTrapDiagnosticBuilder &) = delete;
+  RuntimeTrapDiagnosticBuilder &
+  operator=(const RuntimeTrapDiagnosticBuilder &&) = delete;
+  RuntimeTrapDiagnosticBuilder(const RuntimeTrapDiagnosticBuilder &) = delete;
+  RuntimeTrapDiagnosticBuilder(const RuntimeTrapDiagnosticBuilder &&) = delete;
+
+protected:
+  void FormatDiagnostic();
+
+private:
+  std::string &TrapDiagOut;
+};
 
 //===----------------------------------------------------------------------===//
 // Diagnostic

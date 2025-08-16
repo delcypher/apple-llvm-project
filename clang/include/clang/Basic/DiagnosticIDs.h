@@ -47,6 +47,7 @@ namespace clang {
       DIAG_SIZE_ANALYSIS      =  100,
       DIAG_SIZE_REFACTORING   = 1000,
       DIAG_SIZE_INSTALLAPI    =  100,
+      DIAG_SIZE_CODEGEN       = 10,
     };
     // Start position for diagnostics.
     enum {
@@ -63,7 +64,8 @@ namespace clang {
       DIAG_START_ANALYSIS      = DIAG_START_SEMA          + static_cast<int>(DIAG_SIZE_SEMA),
       DIAG_START_REFACTORING   = DIAG_START_ANALYSIS      + static_cast<int>(DIAG_SIZE_ANALYSIS),
       DIAG_START_INSTALLAPI    = DIAG_START_REFACTORING   + static_cast<int>(DIAG_SIZE_REFACTORING),
-      DIAG_UPPER_LIMIT         = DIAG_START_INSTALLAPI    + static_cast<int>(DIAG_SIZE_INSTALLAPI)
+      DIAG_START_CODEGEN       = DIAG_START_INSTALLAPI    + static_cast<int>(DIAG_SIZE_INSTALLAPI),
+      DIAG_UPPER_LIMIT         = DIAG_START_CODEGEN       + static_cast<int>(DIAG_SIZE_CODEGEN)
     };
 
     class CustomDiagInfo;
@@ -186,7 +188,8 @@ public:
     CLASS_REMARK = 0x02,
     CLASS_WARNING = 0x03,
     CLASS_EXTENSION = 0x04,
-    CLASS_ERROR = 0x05
+    CLASS_ERROR = 0x05,
+    CLASS_TRAP = 0x06
   };
 
   static bool IsCustomDiag(diag::kind Diag) {
@@ -359,6 +362,10 @@ public:
   /// treated as a warning/error by default.
   ///
   bool isExtensionDiag(unsigned DiagID, bool &EnabledByDefault) const;
+
+  bool isTrapDiag(unsigned DiagID) const {
+    return getDiagClass(DiagID) == CLASS_TRAP;
+  }
 
   /// Given a group ID, returns the flag that toggles the group.
   /// For example, for Group::DeprecatedDeclarations, returns

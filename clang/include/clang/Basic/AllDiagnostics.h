@@ -26,6 +26,7 @@
 #include "clang/Basic/DiagnosticSema.h"
 #include "clang/Basic/DiagnosticSerialization.h"
 #include "clang/Basic/DiagnosticRefactoring.h"
+#include "clang/Basic/DiagnosticCodeGen.h"
 
 namespace clang {
 template <size_t SizeOfStr, typename FieldType>

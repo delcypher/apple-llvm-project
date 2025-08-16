@@ -793,6 +793,29 @@ DiagnosticBuilder::DiagnosticBuilder(const DiagnosticBuilder &D)
   D.Clear();
 }
 
+RuntimeTrapDiagnosticBuilder::RuntimeTrapDiagnosticBuilder(
+    DiagnosticsEngine *DiagObj, unsigned DiagID, std::string &TrapDiagOut)
+    : DiagnosticBuilder(DiagObj, SourceLocation(), DiagID),
+      TrapDiagOut(TrapDiagOut) {
+  assert(TrapDiagOut.size() == 0);
+  assert(DiagObj->getDiagnosticIDs()->isTrapDiag(DiagID));
+}
+
+RuntimeTrapDiagnosticBuilder::~RuntimeTrapDiagnosticBuilder() {
+  FormatDiagnostic();
+  // Make sure that when `DiagnosticBuilder::~DiagnosticBuilder()`
+  // calls `Emit()` that it does nothing.
+  Clear();
+}
+
+void RuntimeTrapDiagnosticBuilder::FormatDiagnostic() {
+  // Render the Diagnostic
+  Diagnostic Info(DiagObj, *this);
+  llvm::SmallVector<char, 32> Temp;
+  Info.FormatDiagnostic(Temp);
+  TrapDiagOut = StringRef(Temp.data(), Temp.size()).str();
+}
+
 Diagnostic::Diagnostic(const DiagnosticsEngine *DO,
                        const DiagnosticBuilder &DiagBuilder)
     : DiagObj(DO), DiagLoc(DiagBuilder.DiagLoc), DiagID(DiagBuilder.DiagID),
