@@ -4792,11 +4792,21 @@ void CodeGenFunction::EmitBoundsSafetyTrapCheck(llvm::Value *Checked,
   auto OptRemark = GetBoundsSafetyOptRemarkForTrap(kind);
   assert(BoundsSafetyOptRemarkScope::InScope(this, OptRemark));
 
+  bool UniqueTraps = CGM.getCodeGenOpts().BoundsSafetyUniqueTraps;
+
+  // `unique_traps("bounds-safety")` attribute on the function overrides the
+  // the current codegen option.
+  if (CurCodeDecl && CurCodeDecl->hasAttr<UniqueTrapAttr>()) {
+    if (auto *UTA = CurCodeDecl->getAttr<UniqueTrapAttr>()) {
+      if (UTA->HasTrap(UniqueTrapAttr::BoundsSafety))
+        UniqueTraps = true;
+    }
+  }
+
   // We still need to pass `OptRemark` because not all emitted instructions
   // can be covered by BoundsSafetyOptRemarkScope. This is because EmitTrapCheck
   // caches basic blocks that contain instructions that need annotating.
-  EmitTrapCheck(Checked, SanitizerHandler::BoundsSafety,
-                /*NoMerge=*/CGM.getCodeGenOpts().BoundsSafetyUniqueTraps,
+  EmitTrapCheck(Checked, SanitizerHandler::BoundsSafety, UniqueTraps,
                 /*TR=*/nullptr, GetBoundsSafetyOptRemarkString(OptRemark),
                 GetBoundsSafetyTrapMessageSuffix(kind, TrapCtx));
 }

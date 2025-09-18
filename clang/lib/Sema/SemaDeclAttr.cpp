@@ -7319,6 +7319,45 @@ static void handleUnsafeLateConst(Sema &S, Decl *D,
                                   const ParsedAttr &AL) {
   D->addAttr(::new (S.Context) UnsafeLateConstAttr(S.Context, AL));
 }
+
+static void handleUniqueTrapAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  auto *F = D->getAsFunction();
+  assert(F);
+  // It would be nice if this attribute could only apply to function
+  // definitions because it doesn't really make sense on function prototypes.
+  // However, at this point of the FunctionDecl's life both `hasBody()`
+  // and `isThisDeclarationADefinition()` both return false so we have to allow
+  // it on function prototypes.
+  llvm::SmallVector<UniqueTrapAttr::UniqueTrapType, 1> TrapTypesToUnique;
+  bool ErrorOccured = false;
+  if (AL.getNumArgs() == 0) {
+    S.Diag(AL.getLoc(), diag::err_attribute_too_few_arguments) << AL << 1;
+    return;
+  }
+  for (size_t idx = 0; idx < AL.getNumArgs(); ++idx) {
+    StringRef Arg;
+    if (!S.checkStringLiteralArgumentAttr(AL, idx, Arg)) {
+      ErrorOccured = true;
+      continue;
+    }
+
+    UniqueTrapAttr::UniqueTrapType TrapType;
+    bool Success = UniqueTrapAttr::ConvertStrToUniqueTrapType(Arg, TrapType);
+    if (!Success) {
+      ErrorOccured = true;
+      S.Diag(AL.getLoc(), diag::err_attr_invalid_str_arg) << AL << Arg;
+      continue;
+    }
+    TrapTypesToUnique.push_back(TrapType);
+  }
+
+  if (ErrorOccured)
+    return;
+
+  D->addAttr(UniqueTrapAttr::Create(S.getASTContext(), TrapTypesToUnique.data(),
+                                    TrapTypesToUnique.size(), AL));
+}
+
 /* TO_UPSTREAM(BoundsSafety) OFF*/
 
 static void handlePatchableFunctionEntryAttr(Sema &S, Decl *D,
@@ -9034,6 +9073,9 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
     break;
   case ParsedAttr::AT_UnsafeLateConst:
     handleUnsafeLateConst(S, D, AL);
+    break;
+  case ParsedAttr::AT_UniqueTrap:
+    handleUniqueTrapAttr(S, D, AL);
     break;
   /* TO_UPSTREAM(BoundsSafety) OFF*/
 

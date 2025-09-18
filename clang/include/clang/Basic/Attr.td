@@ -2784,6 +2784,27 @@ def DependerDecls : InheritableAttr {
   let Subjects = SubjectList<[Field, Var]>;
   let Documentation = [InternalOnly];
 }
+
+def UniqueTrap : InheritableAttr {
+  let Spellings = [Clang<"unique_traps">];
+  let Args = [VariadicEnumArgument<"UniqueTrapKind", "UniqueTrapType",
+                                   /*is_string=*/true,
+                                   ["bounds-safety"],
+                                   ["BoundsSafety"]>];
+  let Subjects = SubjectList<[Function], ErrorDiag>;
+  let LangOpts = [BoundsSafety];
+  let Documentation = [UniqueTrapAttrDocs];
+  let AdditionalMembers = [{
+  bool HasTrap(UniqueTrapType UTT) const {
+    for (auto& Trap : uniqueTrapKind()) {
+      if (Trap == UTT)
+        return true;
+    }
+    return false;
+  }
+  }];
+}
+
 // TO_UPSTREAM(BoundsSafety) OFF
 
 // This is a marker used to indicate that an __unsafe_unretained qualifier was

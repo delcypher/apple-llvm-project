@@ -13768,6 +13768,10 @@ def err_bounds_safety_irrecoverable_attr : Error<
   "bounds attribute '%select{__bidi_indexable|__indexable|__single|__unsafe_indexable}0' cannot be applied to attributed type %1 in this context%select{| due to the surrounding 'typeof' specifier}2">;
 def err_bounds_safety_undeduced : Error<
   "bounds attribute '%select{__bidi_indexable|__indexable|__single|__unsafe_indexable}0' cannot be applied to an undeduced type">;
+
+def err_attr_invalid_str_arg : Error<
+  "%0 attribute does not accept \"%1\" as argument">;
+
 } // End of CategoryName = "BoundsSafety Pointer Attributes Issue"
 // TO_UPSTREAM(BoundsSafety) OFF
 

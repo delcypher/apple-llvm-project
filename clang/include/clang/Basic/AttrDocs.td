@@ -9574,6 +9574,64 @@ requirement:
   }];
 }
 
+// TO_UPSTREAM(BoundsSafety) ON
+def UniqueTrapAttrDocs : Documentation {
+  let Category = DocCatField;
+  let Content = [{
+This attribute prevents trap instructions of a particular kind from being merged
+inside a function. Preventing traps from being merged makes it easier to debug
+why the traps were hit at the cost of increasing code size.
+
+The attribute takes a variable number of string arguments. The currently
+accepted values are:
+
+* `"bounds-safety"` - Traps emitted by the `-fbounds-safety` language extension
+
+While it is possible to prevent trap merging for the entire compilation unit
+using:
+
+* `-fbounds-safety-unique-traps` for the `-fbounds-safety` language extension
+
+this increases the code size for the entire compilation unit. The `unique_traps`
+attribute instead prevents trap merging only in the function that has this
+attribute applied. This keeps the codesize increase more localized. This can be
+useful when debugging in highly memory constrained environments.
+
+Here's an example use:
+
+.. code-block:: c
+
+  __attribute__((unique_traps("bounds-safety")))
+  int consume(int* __bidi_indexable ptr, int idx) {
+    return ptr[idx];
+  }
+
+Note this attribute does not transitively apply to functions that are inlined
+into the function body. For example:
+
+.. code-block:: c
+
+  int i_want_to_be_inlined(
+    int* __bidi_indexable p, int idx) {
+      return p[idx];
+  }
+
+  __attribute__((unique_traps("bounds-safety")))
+  int foo(int* __bidi_indexable ptr, int* __bidi_indexable ptr2, int idx) {
+    int other = i_want_to_be_inlined(ptr2, idx);
+    return ptr[idx];
+  }
+
+In this example any traps that come from inlining the call to
+`i_want_to_be_inlined` are allowed to be merged because `i_want_to_be_inlined`
+does not have the `unique_traps("bounds-safety")`attribute. However, traps that
+originate from `foo` (e.g. `ptr[idx]`) will not be merged because the
+`unique_traps("bounds-safety")` attribute is on `foo`.
+
+}];
+}
+// TO_UPSTREAM(BoundsSafety) OFF
+
 def ClspvLibclcBuiltinDoc : Documentation {
   let Category = DocCatFunction;
   let Content = [{
