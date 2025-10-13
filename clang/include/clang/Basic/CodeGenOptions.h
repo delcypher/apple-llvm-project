@@ -211,6 +211,20 @@ public:
               ///< larger debug info than `Basic`.
   };
 
+  /* TO_UPSTREAM(BoundsSafety) ON*/
+  enum class BoundsSafetySoftTrapKind {
+    Disabled,
+    CallWithTrapString,
+    CallWithTrapCode,
+  };
+
+  /// The name of the function to call for BoundsSafety soft traps. This is used
+  /// with `BoundsSafetySoftTrapKind::CallWithTrapString` and
+  // `BoundsSafetySoftTrapKind::CallWithTrapCode`.
+  std::string BoundsSafetySoftTrapFuncName;
+
+  /* TO_UPSTREAM(BoundsSafety) OFF*/
+
   /// The code model to use (-mcmodel).
   std::string CodeModel;
 

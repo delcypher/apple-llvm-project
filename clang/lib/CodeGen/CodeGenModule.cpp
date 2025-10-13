@@ -5512,6 +5512,30 @@ CodeGenModule::GetAddrOfGlobal(GlobalDecl GD, ForDefinition_t IsForDefinition) {
   return GetAddrOfGlobalVar(cast<VarDecl>(D), /*Ty=*/nullptr, IsForDefinition);
 }
 
+/*TO_UPSTREAM(BoundsSafety) ON*/
+llvm::Constant *CodeGenModule::GetOrCreateGlobalStr(StringRef Value,
+                                                    CGBuilderTy &Builder,
+                                                    const Twine &Name) {
+  auto globalStrIt = CachedGlobalStrings.find(Value);
+  if (globalStrIt != CachedGlobalStrings.end()) {
+    return globalStrIt->second;
+  }
+
+  llvm::GlobalVariable *GlobalStringArr =
+      Builder.CreateGlobalString(Value, Name);
+
+  auto *Zero = llvm::ConstantInt::get(Int32Ty, 0);
+
+  // FIXME: Explain this
+  llvm::Constant *Indices[] = {Zero, Zero};
+  auto *GlobalStrAsI8 = llvm::ConstantExpr::getInBoundsGetElementPtr(
+      GlobalStringArr->getValueType(), GlobalStringArr, Indices);
+
+  CachedGlobalStrings[Value] = GlobalStrAsI8;
+  return GlobalStrAsI8;
+}
+/*TO_UPSTREAM(BoundsSafety) OFF*/
+
 llvm::GlobalVariable *CodeGenModule::CreateOrReplaceCXXRuntimeVariable(
     StringRef Name, llvm::Type *Ty, llvm::GlobalValue::LinkageTypes Linkage,
     llvm::Align Alignment) {

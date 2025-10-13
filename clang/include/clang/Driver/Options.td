@@ -2074,6 +2074,25 @@ def fbounds_safety_debug_trap_reasons_EQ
     NormalizedValues<["None", "Basic", "Detailed"]>,
     MarshallingInfoEnum<CodeGenOpts<"BoundsSafetyDebugTrapReasons">, "Detailed">;
 
+def fbounds_safety_soft_traps_EQ
+  : Joined<["-"], "fbounds-safety-soft-traps=">, Group<f_Group>,
+    Visibility<[ClangOption, CC1Option]>,
+    HelpText<"Set how trap reasons are emitted. "
+      "`disabled` - No soft traps, i.e. use hard traps (default)."
+      "`call_with_str` -  "
+      "`call_with_code` - ">,
+    Values<"none,call_with_str,call_with_code">,
+    NormalizedValuesScope<"CodeGenOptions::BoundsSafetySoftTrapKind">,
+    NormalizedValues<["Disabled", "CallWithTrapString", "CallWithTrapCode"]>,
+    MarshallingInfoEnum<CodeGenOpts<"BoundsSafetySoftTraps">, "Disabled">;
+
+def fbounds_safety_soft_trap_function_EQ : Joined<["-"],
+  "fbounds-safety-soft-trap-function=">,
+  Group<f_Group>, Visibility<[CC1Option]>,
+  HelpText<"Set the name of the BoundsSafety soft trap function. See FIXME for "
+  "the ABI of this function.">,
+  MarshallingInfoString<CodeGenOpts<"BoundsSafetySoftTrapFuncName">>;
+
 // TO_UPSTREAM(BoundsSafety) OFF
 
 defm lifetime_safety : BoolFOption<

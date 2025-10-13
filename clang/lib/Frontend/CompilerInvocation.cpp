@@ -2584,6 +2584,24 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
 
   Opts.StaticClosure = Args.hasArg(options::OPT_static_libclosure);
 
+  /* TO_UPSTREAM(BoundsSafety) ON*/
+  if (LangOpts->hasBoundsSafety() &&
+      Opts.BoundsSafetySoftTrapFuncName.empty()) {
+    // Set the default function name if the driver didn't provide one.
+    // Different function names are used for the different ABIs.
+    switch (Opts.getBoundsSafetySoftTraps()) {
+    case CodeGenOptions::BoundsSafetySoftTrapKind::CallWithTrapString:
+      Opts.BoundsSafetySoftTrapFuncName = "__bounds_safety_soft_trap_s";
+      break;
+    case CodeGenOptions::BoundsSafetySoftTrapKind::CallWithTrapCode:
+      Opts.BoundsSafetySoftTrapFuncName = "__bounds_safety_soft_trap_c";
+      break;
+    case CodeGenOptions::BoundsSafetySoftTrapKind::Disabled:
+      break;
+    }
+  }
+  /* TO_UPSTREAM(BoundsSafety) OFF*/
+
   return Diags.getNumErrors() == NumErrorsBefore;
 }
 
