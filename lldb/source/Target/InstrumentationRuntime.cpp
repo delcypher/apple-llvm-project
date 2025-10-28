@@ -55,8 +55,8 @@ void InstrumentationRuntime::ModulesDidLoad(
       return IterationAction::Continue;
 
     const RegularExpression &runtime_regex = GetPatternForRuntimeLibrary();
-    if (runtime_regex.Execute(file_spec.GetFilename().GetCString()) ||
-        module_sp->IsExecutable()) {
+    if (MatchAllModules() || module_sp->IsExecutable() ||
+        runtime_regex.Execute(file_spec.GetFilename().GetCString())) {
       if (CheckIfRuntimeIsValid(module_sp)) {
         SetRuntimeModuleSP(module_sp);
         Activate();
