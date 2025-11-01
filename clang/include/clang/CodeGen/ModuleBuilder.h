@@ -114,6 +114,22 @@ CodeGenerator *CreateLLVMCodeGen(DiagnosticsEngine &Diags,
                                  llvm::LLVMContext &C,
                                  CoverageSourceInfo *CoverageInfo = nullptr);
 
+namespace CodeGen {
+/// Demangle the artificial function name (\param FuncName) used to encode trap
+/// reasons used in debug info for traps (e.g. __builtin_verbose_trap). See
+/// `CGDebugInfo::CreateTrapFailureMessageFor`.
+///
+/// \param FuncName - The function name to demangle.
+///
+/// \return A pair where the first field is the trap category and the
+/// second is the trap message. If the function name cannot be demangled a pair
+/// of empty strings is returned. Note the returned StringRefs if non-empty
+/// point into the underlying storage for \param FuncName and thus have the same
+/// life life time.
+std::pair<StringRef, StringRef>
+DemangleTrapReasonInDebugInfo(StringRef FuncName);
+} // namespace CodeGen
+
 } // end namespace clang
 
 #endif

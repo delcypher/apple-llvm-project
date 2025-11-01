@@ -98,6 +98,9 @@ add_lldb_library(lldbTarget
     lldbUtility
     lldbValueObject
     lldbPluginProcessUtility
+
+  CLANG_LIBS
+    clangCodeGen
   )
 if(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   target_compile_options(lldbTarget PRIVATE -Wno-dollar-in-identifier-extension)
