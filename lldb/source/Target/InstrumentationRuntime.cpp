@@ -59,6 +59,47 @@ void InstrumentationRuntime::ModulesDidLoad(
   });
 }
 
+llvm::Error InstrumentationRuntime::Enable() {
+  SetEnabled(true);
+
+  if (IsActive())
+    return llvm::Error::success();
+
+  // Fast path. During a previous time when the plugin was active the relevant
+  // runtime module was found so we can just activate immediately.
+  // FIXME: What if the module was unloaded via dlclose()?
+  if (GetRuntimeModuleSP()) {
+    Activate();
+    return llvm::Error::success();
+  }
+
+  // Slow path. The plugin has never found the relevant runtime module in the
+  // past so pretend the current list of modules in the target were just loaded
+  // to give the plugin a chance to activate.
+  if (ProcessSP process_sp = GetProcessSP()) {
+    ModuleList module_list;
+    for (const auto &module_sp :
+         process_sp->GetTarget().GetImages().Modules()) {
+      module_list.Append(module_sp);
+    }
+    // Give the plugin a chance to activate.
+    ModulesDidLoad(module_list);
+  }
+  return llvm::Error::success();
+}
+
+llvm::Error InstrumentationRuntime::Disable() {
+  if (IsActive())
+    Deactivate();
+
+  if (IsActive())
+    return llvm::createStringError(
+        "failed to deactivate instrumentation runtime");
+
+  SetEnabled(false);
+  return llvm::Error::success();
+}
+
 lldb::ThreadCollectionSP
 InstrumentationRuntime::GetBacktracesFromExtendedStopInfo(
     StructuredData::ObjectSP info) {
