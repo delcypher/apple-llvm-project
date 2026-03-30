@@ -17,6 +17,7 @@
 #include "lldb/lldb-forward.h"
 #include "lldb/lldb-private.h"
 #include "lldb/lldb-types.h"
+#include "llvm/Support/Error.h"
 
 namespace lldb_private {
 
@@ -73,6 +74,9 @@ protected:
   /// is guaranteed to be loaded.
   virtual void Activate() = 0;
 
+  /// Remove any breakpoints and perform any necessary clean up.
+  virtual void Deactivate() = 0;
+
   /// \return true if `CheckIfRuntimeIsValid` should be called on all modules.
   /// In this case the return value of `GetPatternForRuntimeLibrary` will be
   /// ignored. Return false if `CheckIfRuntimeIsValid` should only be called
@@ -91,6 +95,10 @@ public:
   void ModulesDidLoad(lldb_private::ModuleList &module_list);
 
   bool IsActive() const { return m_is_active; }
+
+  virtual llvm::Error Enable();
+
+  virtual llvm::Error Disable();
 
   virtual lldb::ThreadCollectionSP
   GetBacktracesFromExtendedStopInfo(StructuredData::ObjectSP info);

@@ -14,12 +14,14 @@
 #include "lldb/Interpreter/OptionValueProperties.h"
 #include "lldb/Symbol/SaveCoreOptions.h"
 #include "lldb/Target/Process.h"
+#include "lldb/Target/Target.h"
 #include "lldb/Utility/FileSpec.h"
 #include "lldb/Utility/Status.h"
 #include "lldb/Utility/StringList.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/DynamicLibrary.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorExtras.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
@@ -590,17 +592,33 @@ public:
         [&](const Instance &instance) { return count++ == idx; });
   }
 
-  std::optional<Instance> GetInstanceForName(llvm::StringRef name) {
+  std::optional<Instance> GetInstanceForName(llvm::StringRef name,
+                                             bool enabled_only = true) {
     if (name.empty())
       return std::nullopt;
 
-    return FindEnabledInstance(
-        [&](const Instance &instance) { return instance.name == name; });
+    auto predicate = [&](const Instance &instance) {
+      return instance.name == name;
+    };
+    if (enabled_only)
+      return FindEnabledInstance(predicate);
+
+    return FindInstance(predicate);
   }
 
   std::optional<Instance>
   FindEnabledInstance(std::function<bool(const Instance &)> predicate) const {
     for (const auto &instance : GetSnapshot()) {
+      if (predicate(instance))
+        return instance;
+    }
+    return std::nullopt;
+  }
+
+  std::optional<Instance>
+  FindInstance(std::function<bool(const Instance &)> predicate) const {
+    std::lock_guard<std::mutex> guard(m_mutex);
+    for (const auto &instance : m_instances) {
       if (predicate(instance))
         return instance;
     }
@@ -1859,8 +1877,16 @@ struct InstrumentationRuntimeInstance
   InstrumentationRuntimeGetType get_type_callback = nullptr;
 };
 
-typedef PluginInstances<InstrumentationRuntimeInstance>
-    InstrumentationRuntimeInstances;
+struct InstrumentationRuntimeInstances
+    : public PluginInstances<InstrumentationRuntimeInstance> {
+
+  InstrumentationRuntimeGetType GetTypeCallbackForName(llvm::StringRef name,
+                                                       bool enabled_only) {
+    if (auto instance = GetInstanceForName(name, enabled_only))
+      return instance->get_type_callback;
+    return nullptr;
+  }
+};
 
 static InstrumentationRuntimeInstances &GetInstrumentationRuntimeInstances() {
   static InstrumentationRuntimeInstances g_instances;
@@ -2464,7 +2490,41 @@ PluginManager::GetInstrumentationRuntimePluginInfo() {
 }
 bool PluginManager::SetInstrumentationRuntimePluginEnabled(llvm::StringRef name,
                                                            bool enable) {
-  return GetInstrumentationRuntimeInstances().SetInstanceEnabled(name, enable);
+  if (!GetInstrumentationRuntimeInstances().SetInstanceEnabled(name, enable))
+    return false;
+
+  // Find the `InstrumentationRuntimeType` from the plugin name.
+  auto type_cb = GetInstrumentationRuntimeInstances().GetTypeCallbackForName(
+      name, /*enabled_only=*/false);
+  if (!type_cb)
+    return false;
+  auto instrumentation_ty = type_cb();
+
+  // Notify all alive processes to enable/disable the plugin.
+  bool failed = false;
+  // FIXME: This is a hack. We can't call
+  // `Process::SetInstrumentationRuntimeEnabled()` while
+  // `Debugger::ForEachDebugger()` holds a its lock because runtime activation/
+  // deactivation might indirectly try to acquire the same lock and cause
+  // deadlock. To avoid this we make a copy of the list of debuggers while
+  // holding the lock and then release the lock and iterate over the copy.
+  // The right fix here is for Debugger to use a `std::recursive_mutex`.
+  llvm::SmallVector<DebuggerSP, 1> debuggers;
+  Debugger::ForEachDebugger(
+      [&](DebuggerSP debugger_sp) { debuggers.emplace_back(debugger_sp); });
+  for (const auto &debugger_sp : debuggers) {
+    if (!debugger_sp)
+      continue;
+    for (const auto &target_sp : debugger_sp->GetTargetList().Targets()) {
+      ProcessSP process_sp = target_sp->GetProcessSP();
+      if (!process_sp || !process_sp->IsAlive())
+        continue;
+      failed |= llvm::errorToBool(process_sp->SetInstrumentationRuntimeEnabled(
+          instrumentation_ty, enable));
+    }
+  }
+
+  return !failed;
 }
 
 llvm::SmallVector<RegisteredPluginInfo>
