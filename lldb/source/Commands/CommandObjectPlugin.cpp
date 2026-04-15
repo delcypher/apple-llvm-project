@@ -83,13 +83,34 @@ static int ActOnMatchingPlugins(
 // Used to share the majority of the code between the enable
 // and disable commands.
 int SetEnableOnMatchingPlugins(const llvm::StringRef &pattern,
-                               CommandReturnObject &result, bool enabled) {
+                               CommandReturnObject &result, bool enabled,
+                               Debugger &requesting_debugger,
+                               PluginDomainKind domain) {
   return ActOnMatchingPlugins(
       pattern, [&](const PluginNamespace &plugin_namespace,
                    const std::vector<RegisteredPluginInfo> &plugins) {
         result.AppendMessage(plugin_namespace.name);
         for (const auto &plugin : plugins) {
-          if (!plugin_namespace.set_enabled(plugin.name, enabled)) {
+          bool success = true;
+          switch (plugin_namespace.getDomain()) {
+          case PluginNamespace::DomainKind::GLOBAL:
+            if (domain != PluginDomainKind::GLOBAL) {
+              result.AppendErrorWithFormat(
+                  "failed to enable plugin %s.%s because it can only be %s at "
+                  "the global domain",
+                  plugin_namespace.name.data(), plugin.name.data(),
+                  enabled ? "enabled" : "disabled");
+              continue;
+            }
+            success =
+                (*plugin_namespace.getSetEnabledGlobal())(plugin.name, enabled);
+            break;
+          case PluginNamespace::DomainKind::USER_SPECIFIED:
+            success = (*plugin_namespace.getSetEnabledDebugger())(
+                plugin.name, enabled, requesting_debugger, domain);
+            break;
+          }
+          if (!success) {
             result.AppendErrorWithFormat("failed to enable plugin %s.%s",
                                          plugin_namespace.name.data(),
                                          plugin.name.data());
@@ -270,7 +291,8 @@ private:
 };
 
 static void DoPluginEnableDisable(Args &command, CommandReturnObject &result,
-                                  bool enable) {
+                                  bool enable, Debugger &requesting_debugger,
+                                  PluginDomainKind domain) {
   const char *name = enable ? "enable" : "disable";
   size_t argc = command.GetArgumentCount();
   if (argc == 0) {
@@ -282,7 +304,8 @@ static void DoPluginEnableDisable(Args &command, CommandReturnObject &result,
 
   for (size_t i = 0; i < argc; ++i) {
     llvm::StringRef pattern = command[i].ref();
-    int num_matching = SetEnableOnMatchingPlugins(pattern, result, enable);
+    int num_matching = SetEnableOnMatchingPlugins(pattern, result, enable,
+                                                  requesting_debugger, domain);
 
     if (num_matching == 0) {
       result.AppendErrorWithFormat(
@@ -313,7 +336,9 @@ public:
 
 protected:
   void DoExecute(Args &command, CommandReturnObject &result) override {
-    DoPluginEnableDisable(command, result, /*enable=*/true);
+    PluginDomainKind kind = PluginDomainKind::GLOBAL; // FIXME
+    DoPluginEnableDisable(command, result, /*enable=*/true, GetDebugger(),
+                          kind);
   }
 };
 
@@ -337,7 +362,9 @@ public:
 
 protected:
   void DoExecute(Args &command, CommandReturnObject &result) override {
-    DoPluginEnableDisable(command, result, /*enable=*/false);
+    PluginDomainKind kind = PluginDomainKind::GLOBAL; // FIXME
+    DoPluginEnableDisable(command, result, /*enable=*/false, GetDebugger(),
+                          kind);
   }
 };
 

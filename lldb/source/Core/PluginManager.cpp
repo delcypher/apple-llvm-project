@@ -2488,8 +2488,9 @@ llvm::SmallVector<RegisteredPluginInfo>
 PluginManager::GetInstrumentationRuntimePluginInfo() {
   return GetInstrumentationRuntimeInstances().GetPluginInfoForAllInstances();
 }
-bool PluginManager::SetInstrumentationRuntimePluginEnabled(llvm::StringRef name,
-                                                           bool enable) {
+bool PluginManager::SetInstrumentationRuntimePluginEnabled(
+    llvm::StringRef name, bool enable, Debugger &requesting_debugger,
+    PluginDomainKind domain) {
   if (!GetInstrumentationRuntimeInstances().SetInstanceEnabled(name, enable))
     return false;
 

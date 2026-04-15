@@ -64,6 +64,12 @@ struct RegisteredPluginInfo {
   bool enabled = false;
 };
 
+enum class PluginDomainKind {
+  GLOBAL,
+  DEBUGGER,
+  TARGET,
+};
+
 // Define some data structures to describe known plugin "namespaces".
 // The PluginManager is organized into a series of static functions
 // that operate on different types of plugins. For example SystemRuntime
@@ -76,11 +82,53 @@ struct RegisteredPluginInfo {
 // The plugin namespace here is used so we can operate on all the plugins
 // of a given type so it is easy to enable or disable them as a group.
 using GetPluginInfo = std::function<llvm::SmallVector<RegisteredPluginInfo>()>;
-using SetPluginEnabled = std::function<bool(llvm::StringRef, bool)>;
-struct PluginNamespace {
+using SetPluginEnabledGlobalDomain = std::function<bool(llvm::StringRef, bool)>;
+using SetPluginEnabledUserSpecifiedDomain =
+    std::function<bool(llvm::StringRef, bool, Debugger &, PluginDomainKind)>;
+class PluginNamespace {
+public:
+  enum class DomainKind { GLOBAL, USER_SPECIFIED };
+
+  /// Plugin that is enabled/disabled globally.
+  PluginNamespace(llvm::StringRef name, GetPluginInfo get_info,
+                  SetPluginEnabledGlobalDomain set_enabled)
+      : name(name), get_info(get_info), domain(DomainKind::GLOBAL) {
+    set_enabled_global = set_enabled;
+  }
+
+  /// Plugin that is enabled/disabled based on the user-specified
+  /// domain.
+  PluginNamespace(llvm::StringRef name, GetPluginInfo get_info,
+                  SetPluginEnabledUserSpecifiedDomain set_enabled)
+      : name(name), get_info(get_info), domain(DomainKind::USER_SPECIFIED) {
+    set_enabled_debugger = set_enabled;
+  }
+
+  std::optional<SetPluginEnabledGlobalDomain> getSetEnabledGlobal() const {
+    if (domain == DomainKind::GLOBAL)
+      return set_enabled_global;
+    return std::nullopt;
+  }
+
+  std::optional<SetPluginEnabledUserSpecifiedDomain>
+  getSetEnabledDebugger() const {
+    if (domain == DomainKind::USER_SPECIFIED)
+      return set_enabled_debugger;
+    return std::nullopt;
+  }
+
+  DomainKind getDomain() const { return domain; }
+
   llvm::StringRef name;
   GetPluginInfo get_info;
-  SetPluginEnabled set_enabled;
+  ~PluginNamespace() {}
+
+private:
+  DomainKind domain;
+  union {
+    SetPluginEnabledGlobalDomain set_enabled_global;
+    SetPluginEnabledUserSpecifiedDomain set_enabled_debugger;
+  };
 };
 
 struct InstrumentationRuntimeCallbacks {
@@ -757,8 +805,10 @@ public:
 
   static llvm::SmallVector<RegisteredPluginInfo>
   GetInstrumentationRuntimePluginInfo();
-  static bool SetInstrumentationRuntimePluginEnabled(llvm::StringRef name,
-                                                     bool enable);
+  static bool
+  SetInstrumentationRuntimePluginEnabled(llvm::StringRef name, bool enable,
+                                         Debugger &requesting_debugger,
+                                         PluginDomainKind domain);
 
   static llvm::SmallVector<RegisteredPluginInfo> GetJITLoaderPluginInfo();
   static bool SetJITLoaderPluginEnabled(llvm::StringRef name, bool enable);
