@@ -240,15 +240,19 @@ protected:
       for (size_t i = 0; i < argc; ++i)
         patterns.push_back(command[i].ref());
 
+    PluginDomainKind domain =
+        PluginDomainKind::ePluginDomainKindGlobal; // FIXME
     if (m_options.m_json_format)
-      OutputJsonFormat(patterns, result);
+      OutputJsonFormat(patterns, result, GetDebugger(), domain);
     else
-      OutputTextFormat(patterns, result);
+      OutputTextFormat(patterns, result, GetDebugger(), domain);
   }
 
 private:
   void OutputJsonFormat(const std::vector<llvm::StringRef> &patterns,
-                        CommandReturnObject &result) {
+                        CommandReturnObject &result,
+                        Debugger &requesting_debugger,
+                        PluginDomainKind domain) {
     llvm::json::Object obj;
     bool found_empty = false;
     for (const llvm::StringRef pattern : patterns) {
@@ -269,7 +273,9 @@ private:
   }
 
   void OutputTextFormat(const std::vector<llvm::StringRef> &patterns,
-                        CommandReturnObject &result) {
+                        CommandReturnObject &result,
+                        Debugger &requesting_debugger,
+                        PluginDomainKind domain) {
     for (const llvm::StringRef pattern : patterns) {
       int num_matching = ActOnMatchingPlugins(
           pattern, [&](const PluginNamespace &plugin_namespace,
