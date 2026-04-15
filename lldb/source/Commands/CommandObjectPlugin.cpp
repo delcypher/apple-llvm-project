@@ -10,7 +10,9 @@
 #include "lldb/Core/PluginManager.h"
 #include "lldb/Host/OptionParser.h"
 #include "lldb/Interpreter/CommandInterpreter.h"
+#include "lldb/Interpreter/CommandOptionArgumentTable.h"
 #include "lldb/Interpreter/CommandReturnObject.h"
+#include "lldb/Interpreter/OptionArgParser.h"
 
 using namespace lldb;
 using namespace lldb_private;
@@ -316,11 +318,58 @@ static void DoPluginEnableDisable(Args &command, CommandReturnObject &result,
   }
 }
 
+#define LLDB_OPTIONS_plugin_enable
+#include "CommandOptions.inc"
+
+#define LLDB_OPTIONS_plugin_disable
+#include "CommandOptions.inc"
+
+// Options class for the --domain flag, shared by plugin enable and
+// plugin disable (and reusable by plugin status in the future).
+class PluginDomainOptions : public Options {
+  static constexpr const PluginDomainKind kDefaultDomain =
+      ePluginDomainKindGlobal;
+
+public:
+  PluginDomainOptions(llvm::ArrayRef<OptionDefinition> definitions)
+      : m_definitions(definitions) {}
+
+  Status SetOptionValue(uint32_t option_idx, llvm::StringRef option_arg,
+                        ExecutionContext *execution_context) override {
+    Status error;
+    const int short_option = m_getopt_table[option_idx].val;
+    switch (short_option) {
+    case 'd':
+      m_domain = (PluginDomainKind)OptionArgParser::ToOptionEnum(
+          option_arg, GetDefinitions()[option_idx].enum_values, kDefaultDomain,
+          error);
+      break;
+    default:
+      llvm_unreachable("Unimplemented option");
+    }
+    return error;
+  }
+
+  void OptionParsingStarting(ExecutionContext *execution_context) override {
+    m_domain = kDefaultDomain;
+  }
+
+  llvm::ArrayRef<OptionDefinition> GetDefinitions() override {
+    return m_definitions;
+  }
+
+  PluginDomainKind m_domain = kDefaultDomain;
+
+private:
+  llvm::ArrayRef<OptionDefinition> m_definitions;
+};
+
 class CommandObjectPluginEnable : public CommandObjectParsed {
 public:
   CommandObjectPluginEnable(CommandInterpreter &interpreter)
       : CommandObjectParsed(interpreter, "plugin enable",
-                            "Enable registered LLDB plugins.", nullptr) {
+                            "Enable registered LLDB plugins.", nullptr),
+        m_options(llvm::ArrayRef(g_plugin_enable_options)) {
     AddSimpleArgumentList(eArgTypeManagedPlugin);
   }
 
@@ -334,19 +383,23 @@ public:
 
   ~CommandObjectPluginEnable() override = default;
 
+  Options *GetOptions() override { return &m_options; }
+
 protected:
   void DoExecute(Args &command, CommandReturnObject &result) override {
-    PluginDomainKind kind = ePluginDomainKindGlobal; // FIXME
     DoPluginEnableDisable(command, result, /*enable=*/true, GetDebugger(),
-                          kind);
+                          m_options.m_domain);
   }
+
+  PluginDomainOptions m_options;
 };
 
 class CommandObjectPluginDisable : public CommandObjectParsed {
 public:
   CommandObjectPluginDisable(CommandInterpreter &interpreter)
       : CommandObjectParsed(interpreter, "plugin disable",
-                            "Disable registered LLDB plugins.", nullptr) {
+                            "Disable registered LLDB plugins.", nullptr),
+        m_options(llvm::ArrayRef(g_plugin_disable_options)) {
     AddSimpleArgumentList(eArgTypeManagedPlugin);
   }
 
@@ -360,12 +413,15 @@ public:
 
   ~CommandObjectPluginDisable() override = default;
 
+  Options *GetOptions() override { return &m_options; }
+
 protected:
   void DoExecute(Args &command, CommandReturnObject &result) override {
-    PluginDomainKind kind = ePluginDomainKindGlobal; // FIXME
     DoPluginEnableDisable(command, result, /*enable=*/false, GetDebugger(),
-                          kind);
+                          m_options.m_domain);
   }
+
+  PluginDomainOptions m_options;
 };
 
 CommandObjectPlugin::CommandObjectPlugin(CommandInterpreter &interpreter)
