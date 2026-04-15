@@ -139,6 +139,9 @@ static std::string ConvertJSONToPrettyString(const llvm::json::Value &json) {
 
 // These option definitions are used by the plugin list command.
 class PluginListCommandOptions : public Options {
+  static constexpr const PluginDomainKind kDefaultDomain =
+      ePluginDomainKindGlobal;
+
 public:
   PluginListCommandOptions() = default;
 
@@ -153,6 +156,11 @@ public:
     case 'j':
       m_json_format = true;
       break;
+    case 'd':
+      m_domain = (PluginDomainKind)OptionArgParser::ToOptionEnum(
+          option_arg, GetDefinitions()[option_idx].enum_values, kDefaultDomain,
+          error);
+      break;
     default:
       llvm_unreachable("Unimplemented option");
     }
@@ -162,6 +170,7 @@ public:
 
   void OptionParsingStarting(ExecutionContext *execution_context) override {
     m_json_format = false;
+    m_domain = kDefaultDomain;
   }
 
   llvm::ArrayRef<OptionDefinition> GetDefinitions() override {
@@ -170,6 +179,7 @@ public:
 
   // Instance variables to hold the values for command options.
   bool m_json_format = false;
+  PluginDomainKind m_domain = kDefaultDomain;
 };
 } // namespace
 
@@ -240,12 +250,10 @@ protected:
       for (size_t i = 0; i < argc; ++i)
         patterns.push_back(command[i].ref());
 
-    PluginDomainKind domain =
-        PluginDomainKind::ePluginDomainKindGlobal; // FIXME
     if (m_options.m_json_format)
-      OutputJsonFormat(patterns, result, GetDebugger(), domain);
+      OutputJsonFormat(patterns, result, GetDebugger(), m_options.m_domain);
     else
-      OutputTextFormat(patterns, result, GetDebugger(), domain);
+      OutputTextFormat(patterns, result, GetDebugger(), m_options.m_domain);
   }
 
 private:
@@ -253,6 +261,11 @@ private:
                         CommandReturnObject &result,
                         Debugger &requesting_debugger,
                         PluginDomainKind domain) {
+    if (domain != PluginDomainKind::ePluginDomainKindGlobal) {
+      result.AppendErrorWithFormat("Only global domain is supported");
+      return;
+    }
+
     llvm::json::Object obj;
     bool found_empty = false;
     for (const llvm::StringRef pattern : patterns) {
@@ -276,6 +289,11 @@ private:
                         CommandReturnObject &result,
                         Debugger &requesting_debugger,
                         PluginDomainKind domain) {
+    if (domain != PluginDomainKind::ePluginDomainKindGlobal) {
+      result.AppendErrorWithFormat("Only global domain is supported");
+      return;
+    }
+
     for (const llvm::StringRef pattern : patterns) {
       int num_matching = ActOnMatchingPlugins(
           pattern, [&](const PluginNamespace &plugin_namespace,
