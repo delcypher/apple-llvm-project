@@ -94,7 +94,7 @@ int SetEnableOnMatchingPlugins(const llvm::StringRef &pattern,
           bool success = true;
           switch (plugin_namespace.getDomain()) {
           case PluginNamespace::DomainKind::GLOBAL:
-            if (domain != PluginDomainKind::GLOBAL) {
+            if (domain != ePluginDomainKindGlobal) {
               result.AppendErrorWithFormat(
                   "failed to enable plugin %s.%s because it can only be %s at "
                   "the global domain",
@@ -336,7 +336,7 @@ public:
 
 protected:
   void DoExecute(Args &command, CommandReturnObject &result) override {
-    PluginDomainKind kind = PluginDomainKind::GLOBAL; // FIXME
+    PluginDomainKind kind = ePluginDomainKindGlobal; // FIXME
     DoPluginEnableDisable(command, result, /*enable=*/true, GetDebugger(),
                           kind);
   }
@@ -362,7 +362,7 @@ public:
 
 protected:
   void DoExecute(Args &command, CommandReturnObject &result) override {
-    PluginDomainKind kind = PluginDomainKind::GLOBAL; // FIXME
+    PluginDomainKind kind = ePluginDomainKindGlobal; // FIXME
     DoPluginEnableDisable(command, result, /*enable=*/false, GetDebugger(),
                           kind);
   }

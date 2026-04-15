@@ -550,6 +550,12 @@ enum InstrumentationRuntimeType {
   eNumInstrumentationRuntimeTypes
 };
 
+enum PluginDomainKind {
+  ePluginDomainKindGlobal,
+  ePluginDomainKindDebugger,
+  ePluginDomainKindTarget,
+};
+
 enum DynamicValueType {
   eNoDynamicValues = 0,
   eDynamicCanRunTarget = 1,

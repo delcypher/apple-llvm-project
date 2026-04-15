@@ -64,12 +64,6 @@ struct RegisteredPluginInfo {
   bool enabled = false;
 };
 
-enum class PluginDomainKind {
-  GLOBAL,
-  DEBUGGER,
-  TARGET,
-};
-
 // Define some data structures to describe known plugin "namespaces".
 // The PluginManager is organized into a series of static functions
 // that operate on different types of plugins. For example SystemRuntime
@@ -83,8 +77,8 @@ enum class PluginDomainKind {
 // of a given type so it is easy to enable or disable them as a group.
 using GetPluginInfo = std::function<llvm::SmallVector<RegisteredPluginInfo>()>;
 using SetPluginEnabledGlobalDomain = std::function<bool(llvm::StringRef, bool)>;
-using SetPluginEnabledUserSpecifiedDomain =
-    std::function<bool(llvm::StringRef, bool, Debugger &, PluginDomainKind)>;
+using SetPluginEnabledUserSpecifiedDomain = std::function<bool(
+    llvm::StringRef, bool, Debugger &, lldb::PluginDomainKind)>;
 class PluginNamespace {
 public:
   enum class DomainKind { GLOBAL, USER_SPECIFIED };
@@ -808,7 +802,7 @@ public:
   static bool
   SetInstrumentationRuntimePluginEnabled(llvm::StringRef name, bool enable,
                                          Debugger &requesting_debugger,
-                                         PluginDomainKind domain);
+                                         lldb::PluginDomainKind domain);
 
   static llvm::SmallVector<RegisteredPluginInfo> GetJITLoaderPluginInfo();
   static bool SetJITLoaderPluginEnabled(llvm::StringRef name, bool enable);
