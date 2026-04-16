@@ -2491,41 +2491,70 @@ PluginManager::GetInstrumentationRuntimePluginInfo() {
 bool PluginManager::SetInstrumentationRuntimePluginEnabled(
     llvm::StringRef name, bool enable, Debugger &requesting_debugger,
     PluginDomainKind domain) {
-  if (!GetInstrumentationRuntimeInstances().SetInstanceEnabled(name, enable))
-    return false;
 
-  // Find the `InstrumentationRuntimeType` from the plugin name.
-  auto type_cb = GetInstrumentationRuntimeInstances().GetTypeCallbackForName(
-      name, /*enabled_only=*/false);
-  if (!type_cb)
-    return false;
-  auto instrumentation_ty = type_cb();
+  auto get_instrumentation_runtime_ty =
+      [&]() -> std::optional<lldb::InstrumentationRuntimeType> {
+    auto type_cb = GetInstrumentationRuntimeInstances().GetTypeCallbackForName(
+        name, /*enabled_only=*/false);
+    if (!type_cb)
+      return std::nullopt;
+    return type_cb();
+  };
 
-  // Notify all alive processes to enable/disable the plugin.
-  bool failed = false;
-  // FIXME: This is a hack. We can't call
-  // `Process::SetInstrumentationRuntimeEnabled()` while
-  // `Debugger::ForEachDebugger()` holds a its lock because runtime activation/
-  // deactivation might indirectly try to acquire the same lock and cause
-  // deadlock. To avoid this we make a copy of the list of debuggers while
-  // holding the lock and then release the lock and iterate over the copy.
-  // The right fix here is for Debugger to use a `std::recursive_mutex`.
-  llvm::SmallVector<DebuggerSP, 1> debuggers;
-  Debugger::ForEachDebugger(
-      [&](DebuggerSP debugger_sp) { debuggers.emplace_back(debugger_sp); });
-  for (const auto &debugger_sp : debuggers) {
-    if (!debugger_sp)
-      continue;
-    for (const auto &target_sp : debugger_sp->GetTargetList().Targets()) {
+  switch (domain) {
+  case lldb::ePluginDomainKindGlobal:
+    // Update the global enablement flag
+    if (!GetInstrumentationRuntimeInstances().SetInstanceEnabled(name, enable))
+      return false;
+    // FIXME: We should in principle iterate over all debuggers and
+    // enable/disable their runtimes. However, this doesn't work because
+    // if we hold the DebuggerList mutex because it can cause deadlock while
+    // trying to activate a plugin. For now just don't update live processes.
+    // We should probably emit a warning about this.
+    return true;
+  case lldb::ePluginDomainKindDebugger: {
+    // Deliberately don't update the global enablement flag here.
+    std::optional<lldb::InstrumentationRuntimeType> instrumentation_runtime_ty =
+        get_instrumentation_runtime_ty();
+    if (!instrumentation_runtime_ty.has_value())
+      return false;
+
+    // Loop over all targets in requesting debugger and enable the plugin in
+    // each of them.
+    bool failed = false;
+    for (const auto &target_sp :
+         requesting_debugger.GetTargetList().Targets()) {
       ProcessSP process_sp = target_sp->GetProcessSP();
       if (!process_sp || !process_sp->IsAlive())
         continue;
       failed |= llvm::errorToBool(process_sp->SetInstrumentationRuntimeEnabled(
-          instrumentation_ty, enable));
+          *instrumentation_runtime_ty, enable));
     }
-  }
+    return !failed;
 
-  return !failed;
+    break;
+  }
+  case lldb::ePluginDomainKindTarget: {
+    // Deliberately don't update the global enablement flag here.
+    std::optional<lldb::InstrumentationRuntimeType> instrumentation_runtime_ty =
+        get_instrumentation_runtime_ty();
+    if (!instrumentation_runtime_ty.has_value())
+      return false;
+
+    // Enable/disable the plugin for the process associated with the currently
+    // selected target.
+    auto selected_target = requesting_debugger.GetSelectedTarget();
+    if (!selected_target)
+      return false; // FIXME: Should emit error message
+    ProcessSP process_sp = selected_target->GetProcessSP();
+    if (!process_sp || !process_sp->IsAlive())
+      return false; // FIXME: Should emit error message
+    return !llvm::errorToBool(process_sp->SetInstrumentationRuntimeEnabled(
+        *instrumentation_runtime_ty, enable));
+    break;
+  }
+  }
+  llvm_unreachable("Unhandled domain");
 }
 
 llvm::SmallVector<RegisteredPluginInfo>
