@@ -174,7 +174,6 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
 
         # Check the plugin is enabled before we run
         self.assertTrue(self.bs_plugin_is_enabled(domain='global'))
-        self.assertTrue(self.bs_plugin_is_enabled(domain='target'))
         self.runCmd("run")
 
         process = self.test_target.process
@@ -206,12 +205,12 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
         -fbounds-safety-soft-traps=call-minimal and then later enable the
         plugin
         """
-        self.build(make_targets=["soft-trap-test-minimal"])
-        self.test_target = self.createTestTarget()
-
         # Disable the plugin so we do not stop at the second soft trap
         self.runCmd("plugin disable instrumentation-runtime.BoundsSafety")
         self.assertFalse(self.bs_plugin_is_enabled(domain='global'))
+
+        self.build(make_targets=["soft-trap-test-minimal"])
+        self.test_target = self.createTestTarget()
 
         try:
             # Set a breakpoint on test_breakpoint which is called just before
@@ -219,6 +218,8 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
             bp = self.test_target.BreakpointCreateByName("test_breakpoint")
             self.assertTrue(bp.GetNumLocations() > 0)
             self.runCmd("run")
+            self.assertFalse(self.bs_plugin_is_enabled(domain='global'))
+            self.assertFalse(self.bs_plugin_is_enabled(domain='target'))
 
             process = self.test_target.process
             thread = process.GetSelectedThread()
