@@ -6353,6 +6353,18 @@ Process::SetInstrumentationRuntimeEnabled(InstrumentationRuntimeType irt,
   return new_plugin->Enable();
 }
 
+bool Process::InstrumentationRuntimeIsEnabled(
+    lldb::InstrumentationRuntimeType irt) {
+  if (auto instrumentation_runtime = GetInstrumentationRuntime(irt)) {
+    // This process has a instrumentation runtime instance
+    return instrumentation_runtime->IsEnabled();
+  }
+
+  // There's no instance of the InstrumentationRuntimeType so the plugin must
+  // be disabled.
+  return false;
+}
+
 bool Process::GetModuleSpec(const FileSpec &module_file_spec,
                             const ArchSpec &arch, ModuleSpec &module_spec) {
   module_spec.Clear();

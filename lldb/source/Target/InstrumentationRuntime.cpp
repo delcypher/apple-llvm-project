@@ -60,6 +60,8 @@ void InstrumentationRuntime::ModulesDidLoad(
 }
 
 llvm::Error InstrumentationRuntime::Enable() {
+  SetEnabled(true);
+
   if (IsActive())
     return llvm::Error::success();
 
@@ -93,6 +95,8 @@ llvm::Error InstrumentationRuntime::Disable() {
   if (IsActive())
     return llvm::createStringError(
         "failed to deactivate instrumentation runtime");
+
+  SetEnabled(false);
   return llvm::Error::success();
 }
 

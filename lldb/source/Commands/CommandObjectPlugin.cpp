@@ -261,15 +261,11 @@ private:
                         CommandReturnObject &result,
                         Debugger &requesting_debugger,
                         PluginDomainKind domain) {
-    if (domain != PluginDomainKind::ePluginDomainKindGlobal) {
-      result.AppendErrorWithFormat("Only global domain is supported");
-      return;
-    }
-
     llvm::json::Object obj;
     bool found_empty = false;
     for (const llvm::StringRef pattern : patterns) {
-      llvm::json::Object pat_obj = PluginManager::GetJSON(pattern);
+      llvm::json::Object pat_obj = PluginManager::GetJSON(
+          pattern, requesting_debugger.shared_from_this(), domain);
       if (pat_obj.empty()) {
         found_empty = true;
         result.AppendErrorWithFormat(
@@ -289,20 +285,64 @@ private:
                         CommandReturnObject &result,
                         Debugger &requesting_debugger,
                         PluginDomainKind domain) {
-    if (domain != PluginDomainKind::ePluginDomainKindGlobal) {
-      result.AppendErrorWithFormat("Only global domain is supported");
-      return;
-    }
+
+    auto PrintEnablement = [&](bool enabled,
+                               const RegisteredPluginInfo &plugin) {
+      result.AppendMessageWithFormatv("  {0} {1, -30} {2}",
+                                      enabled ? "[+]" : "[-]", plugin.name,
+                                      plugin.description);
+    };
 
     for (const llvm::StringRef pattern : patterns) {
       int num_matching = ActOnMatchingPlugins(
           pattern, [&](const PluginNamespace &plugin_namespace,
                        const std::vector<RegisteredPluginInfo> &plugins) {
-            result.AppendMessage(plugin_namespace.name);
-            for (auto &plugin : plugins) {
-              result.AppendMessageWithFormatv("  {0} {1, -30} {2}",
-                                              plugin.enabled ? "[+]" : "[-]",
-                                              plugin.name, plugin.description);
+            switch (domain) {
+
+            case lldb::ePluginDomainKindGlobal: {
+              result.AppendMessage(plugin_namespace.name);
+              for (auto &plugin : plugins)
+                PrintEnablement(plugin.enabled, plugin);
+              break;
+            }
+            case lldb::ePluginDomainKindDebugger:
+              // Currently enablement status of plugins is not stored inside
+              // debugger instances. If that ever changes we can support
+              // querying enablement here.
+              result.AppendErrorWithFormatv(
+                  "cannot query plugin namespace {0} enablement in the "
+                  "debugger domain",
+                  plugin_namespace.name);
+              return;
+              break;
+            case lldb::ePluginDomainKindTarget:
+              if (plugin_namespace.getDomain() !=
+                  PluginNamespace::DomainKind::USER_SPECIFIED) {
+                result.AppendErrorWithFormatv(
+                    "plugin namespace {0} does not support querying enablement "
+                    "in the target domain",
+                    plugin_namespace.name);
+                return;
+              }
+              auto target = requesting_debugger.GetSelectedTarget();
+
+              // Only instrumentation-runtime plugins support the target domain
+              // currently so we can assume that's the case when querying
+              // enablement.
+              assert(plugin_namespace.name == "instrumentation-runtime");
+              result.AppendMessage(plugin_namespace.name);
+              for (auto &plugin : plugins) {
+                auto enabled =
+                    PluginManager::IsInstrumentationRuntimePluginEnabled(
+                        plugin.name, target, domain);
+                if (llvm::Error E = enabled.takeError()) {
+                  result.AppendErrorWithFormatv("{}",
+                                                llvm::toString(std::move(E)));
+                  continue;
+                }
+                PrintEnablement(*enabled, plugin);
+              }
+              break;
             }
           });
       if (num_matching == 0) {

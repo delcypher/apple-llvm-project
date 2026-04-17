@@ -42,8 +42,10 @@ class InstrumentationRuntime
   bool m_is_active;
 
 protected:
+  bool m_is_enabled;
+
   InstrumentationRuntime(const lldb::ProcessSP &process_sp)
-      : m_breakpoint_id(0), m_is_active(false) {
+      : m_breakpoint_id(0), m_is_active(false), m_is_enabled(true) {
     if (process_sp)
       m_process_wp = process_sp;
   }
@@ -61,6 +63,7 @@ protected:
   void SetBreakpointID(lldb::user_id_t ID) { m_breakpoint_id = ID; }
 
   void SetActive(bool IsActive) { m_is_active = IsActive; }
+  void SetEnabled(bool enabled) { m_is_enabled = enabled; }
 
   /// Return a regular expression which can be used to identify a valid version
   /// of the runtime library.
@@ -99,6 +102,8 @@ public:
   virtual llvm::Error Enable();
 
   virtual llvm::Error Disable();
+
+  bool IsEnabled() const { return m_is_enabled; }
 
   virtual lldb::ThreadCollectionSP
   GetBacktracesFromExtendedStopInfo(StructuredData::ObjectSP info);
