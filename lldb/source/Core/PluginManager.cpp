@@ -571,13 +571,13 @@ public:
   // Note that this is a copy of the internal state so modifications
   // to the returned instances will not be reflected back to instances
   // stored by the PluginInstances object.
-  llvm::SmallVector<Instance> GetSnapshot() const {
+  llvm::SmallVector<Instance> GetSnapshot(bool enabled_only = true) const {
     std::lock_guard<std::mutex> guard(m_mutex);
 
     llvm::SmallVector<Instance> enabled_instances;
     enabled_instances.reserve(m_instances.size());
     for (const auto &instance : m_instances) {
-      if (instance.enabled)
+      if (!enabled_only || instance.enabled)
         enabled_instances.push_back(instance);
     }
     return enabled_instances;
@@ -1881,8 +1881,9 @@ bool PluginManager::UnregisterPlugin(
 }
 
 llvm::SmallVector<InstrumentationRuntimeCallbacks>
-PluginManager::GetInstrumentationRuntimeCallbacks() {
-  auto instances = GetInstrumentationRuntimeInstances().GetSnapshot();
+PluginManager::GetInstrumentationRuntimeCallbacks(bool enabled_only) {
+  auto instances =
+      GetInstrumentationRuntimeInstances().GetSnapshot(enabled_only);
   llvm::SmallVector<InstrumentationRuntimeCallbacks> result;
   result.reserve(instances.size());
   for (auto &instance : instances)
