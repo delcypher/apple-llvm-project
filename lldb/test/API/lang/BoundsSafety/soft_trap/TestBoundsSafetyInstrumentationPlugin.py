@@ -80,8 +80,8 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
             expected_line_num=line_num,
         )
 
-    def bs_plugin_is_enabled(self):
-        return self.plugin_is_enabled("instrumentation-runtime.BoundsSafety")
+    def bs_plugin_is_enabled(self, domain:str):
+        return self.plugin_is_enabled("instrumentation-runtime", "BoundsSafety", domain=domain)
 
     # Skip the tests on Windows because they fail due to the stop reason
     # being `eStopReasonNon` instead of the expected
@@ -98,7 +98,8 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
         self.runCmd("run")
 
         process = self.test_target.process
-        self.assertTrue(self.bs_plugin_is_enabled())
+        self.assertTrue(self.bs_plugin_is_enabled(domain='global'))
+        self.assertTrue(self.bs_plugin_is_enabled(domain='target'))
 
         # First soft trap hit
         self.check_state_soft_trap_minimal(
@@ -134,7 +135,8 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
         self.runCmd("run")
 
         process = self.test_target.process
-        self.assertTrue(self.bs_plugin_is_enabled())
+        self.assertTrue(self.bs_plugin_is_enabled(domain='global'))
+        self.assertTrue(self.bs_plugin_is_enabled(domain='target'))
 
         # First soft trap hit
         self.check_state_soft_trap_with_str(
@@ -171,7 +173,8 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
         self.test_target = self.createTestTarget()
 
         # Check the plugin is enabled before we run
-        self.assertTrue(self.bs_plugin_is_enabled())
+        self.assertTrue(self.bs_plugin_is_enabled(domain='global'))
+        self.assertTrue(self.bs_plugin_is_enabled(domain='target'))
         self.runCmd("run")
 
         process = self.test_target.process
@@ -184,20 +187,15 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
             self.line_first_soft_trap,
         )
 
-        # Disable the plugin so we do not stop at the second soft trap
-        self.runCmd("plugin disable instrumentation-runtime.BoundsSafety")
-        self.assertFalse(self.bs_plugin_is_enabled())
+        # Disable the plugin on the target so we do not stop at the second soft trap
+        self.runCmd("plugin disable --domain target instrumentation-runtime.BoundsSafety")
+        self.assertFalse(self.bs_plugin_is_enabled(domain='target'))
+        self.assertTrue(self.bs_plugin_is_enabled(domain='global'))
 
-        try:
-            process.Continue()
-            self.assertEqual(process.GetState(), lldb.eStateExited)
-            self.assertEqual(process.GetExitStatus(), 0)
-        finally:
-            # Restore the default so we don't affect other tests. This command
-            # affects the debugger session globally so we have to be careful
-            # to restore the global state after we are done.
-            self.runCmd("plugin enable instrumentation-runtime.BoundsSafety")
-            self.assertTrue(self.bs_plugin_is_enabled())
+        process.Continue()
+        self.assertEqual(process.GetState(), lldb.eStateExited)
+        self.assertEqual(process.GetExitStatus(), 0)
+
 
     @skipIfWindows
     @skipUnlessBoundsSafety
@@ -213,38 +211,43 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
 
         # Disable the plugin so we do not stop at the second soft trap
         self.runCmd("plugin disable instrumentation-runtime.BoundsSafety")
-        self.assertFalse(self.bs_plugin_is_enabled())
+        self.assertFalse(self.bs_plugin_is_enabled(domain='global'))
 
-        # Set a breakpoint on test_breakpoint which is called just before
-        # the last soft trap
-        bp = self.test_target.BreakpointCreateByName("test_breakpoint")
-        self.assertTrue(bp.GetNumLocations() > 0)
-        self.runCmd("run")
+        try:
+            # Set a breakpoint on test_breakpoint which is called just before
+            # the last soft trap
+            bp = self.test_target.BreakpointCreateByName("test_breakpoint")
+            self.assertTrue(bp.GetNumLocations() > 0)
+            self.runCmd("run")
 
-        process = self.test_target.process
-        thread = process.GetSelectedThread()
-        frame = thread.GetSelectedFrame()
+            process = self.test_target.process
+            thread = process.GetSelectedThread()
+            frame = thread.GetSelectedFrame()
 
-        # We should have skipped all UBSan issues and stopped at the
-        # test_breakpoint function.
-        stop_reason = thread.GetStopReason()
-        self.assertStopReason(stop_reason, lldb.eStopReasonBreakpoint)
-        self.assertIn("test_breakpoint", frame.GetFunctionName())
+            # We should have skipped all UBSan issues and stopped at the
+            # test_breakpoint function.
+            stop_reason = thread.GetStopReason()
+            self.assertStopReason(stop_reason, lldb.eStopReasonBreakpoint)
+            self.assertIn("test_breakpoint", frame.GetFunctionName())
 
-        # Enable the plugin so we stop at the second soft trap
-        self.runCmd("plugin enable instrumentation-runtime.BoundsSafety")
-        self.assertTrue(self.bs_plugin_is_enabled())
-        process.Continue()
+            # Enable the plugin so we stop at the second soft trap
+            self.runCmd("plugin enable --domain target instrumentation-runtime.BoundsSafety")
+            self.assertTrue(self.bs_plugin_is_enabled(domain='target'))
+            self.assertFalse(self.bs_plugin_is_enabled(domain='global'))
+            process.Continue()
 
-        # Second soft trap hit
-        self.check_state_soft_trap_minimal(
-            "Soft Bounds check failed: indexing below lower bound in 'buffer[-1]'",
-            "main",
-            "main.c",
-            self.line_second_soft_trap,
-        )
+            # Second soft trap hit
+            self.check_state_soft_trap_minimal(
+                "Soft Bounds check failed: indexing below lower bound in 'buffer[-1]'",
+                "main",
+                "main.c",
+                self.line_second_soft_trap,
+            )
 
-        process.Continue()
-        self.assertEqual(process.GetState(), lldb.eStateExited)
-        self.assertEqual(process.GetExitStatus(), 0)
-        self.assertTrue(self.bs_plugin_is_enabled())
+            process.Continue()
+            self.assertEqual(process.GetState(), lldb.eStateExited)
+            self.assertEqual(process.GetExitStatus(), 0)
+        finally:
+            # Restore the global state to avoid affecting other tests
+            self.runCmd("plugin enable instrumentation-runtime.BoundsSafety")
+            self.assertTrue(self.bs_plugin_is_enabled(domain='global'))

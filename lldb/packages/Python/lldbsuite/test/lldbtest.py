@@ -1820,17 +1820,46 @@ class Base(unittest.TestCase):
         metrics_json = return_obj.GetOutput()
         return json.loads(metrics_json)
 
-    def plugin_is_enabled(self, name):
+    def plugin_is_enabled(self, namespace:str, name:str, domain:str= 'global'):
+        assert domain in {'global', 'debugger', 'target'}
         interp = self.dbg.GetCommandInterpreter()
         result = lldb.SBCommandReturnObject()
-        interp.HandleCommand(f"plugin list {name}", result)
+        cmd = f"plugin list --json --domain {domain} {namespace}.{name}"
+        interp.HandleCommand(cmd, result)
         if not result.Succeeded():
-            return None
+            raise Exception(f'Failed to run "{cmd}"')
         output = result.GetOutput()
-        if "[+]" in output:
-            return True
-        if "[-]" in output:
-            return False
+        # Parse output like
+        # {
+        #   "instrumentation-runtime": [
+        #     {
+        #       "enabled": true,
+        #       "name": "BoundsSafety"
+        #     }
+        #   ]
+        # }
+        try:
+            parsed_json = json.loads(output)
+            if not isinstance(parsed_json, dict):
+                raise Exception('not dict')
+            error_data = parsed_json.get('error')
+            if error_data:
+                raise Exception(f'{error_data}')
+            namespace_data = parsed_json.get(namespace)
+            if not isinstance(namespace_data, list):
+                raise Exception('not list')
+                return None
+            for entry in namespace_data:
+                if not isinstance(entry, dict):
+                    continue
+                if entry.get("name") == name:
+                    enabled = entry.get("enabled")
+                    if not isinstance(enabled, bool):
+                        raise Exception('not bool')
+                        return None
+                    return enabled
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            raise e
         return None
 
 

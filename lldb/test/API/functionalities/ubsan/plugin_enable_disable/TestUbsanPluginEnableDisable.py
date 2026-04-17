@@ -15,9 +15,9 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         self.line_first_ubsan_issue = line_number("main.c", "// first ubsan issue")
         self.line_third_ubsan_issue = line_number("main.c", "// third ubsan issue")
 
-    def ubsan_plugin_is_enabled(self):
+    def ubsan_plugin_is_enabled(self, domain:str):
         return self.plugin_is_enabled(
-            "instrumentation-runtime.UndefinedBehaviorSanitizer"
+            "instrumentation-runtime", "UndefinedBehaviorSanitizer", domain=domain
         )
 
     def check_stopped_at_ubsan_issue(self, line_num):
@@ -52,7 +52,8 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         self.registerSanitizerLibrariesWithTarget(target)
 
         self.runCmd("run")
-        self.assertTrue(self.ubsan_plugin_is_enabled())
+        self.assertTrue(self.ubsan_plugin_is_enabled(domain='target'))
+        self.assertTrue(self.ubsan_plugin_is_enabled(domain='global'))
 
         process = self.dbg.GetSelectedTarget().process
         thread = process.GetSelectedThread()
@@ -61,24 +62,18 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         # We should have stopped on the first UBSan issue.
         self.check_stopped_at_ubsan_issue(self.line_first_ubsan_issue)
 
-        # Disable the UBSan plugin.
-        self.runCmd("plugin disable instrumentation-runtime.UndefinedBehaviorSanitizer")
-        self.assertFalse(self.ubsan_plugin_is_enabled())
+        # Disable the UBSan plugin for this target
+        self.runCmd("plugin disable --domain target instrumentation-runtime.UndefinedBehaviorSanitizer")
+        self.assertFalse(self.ubsan_plugin_is_enabled(domain='target'))
+        # Globally the plugin is still marked as enabled
+        self.assertTrue(self.ubsan_plugin_is_enabled(domain='global'))
 
         # Continue. The remaining UBSan issues should not cause
         # instrumentation stops and the process should exit cleanly.
-        try:
-            process.Continue()
-            self.assertEqual(process.GetState(), lldb.eStateExited)
-            self.assertEqual(process.GetExitStatus(), 0)
-        finally:
-            # Restore the default so we don't affect other tests. This command
-            # affects the debugger session globally so we have to be careful
-            # to restore the global state after we are done.
-            self.runCmd(
-                "plugin enable instrumentation-runtime.UndefinedBehaviorSanitizer"
-            )
-            self.assertTrue(self.ubsan_plugin_is_enabled())
+        process.Continue()
+        self.assertEqual(process.GetState(), lldb.eStateExited)
+        self.assertEqual(process.GetExitStatus(), 0)
+
 
     @skipUnlessUndefinedBehaviorSanitizer
     @no_debug_info_test
@@ -91,41 +86,48 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         self.assertTrue(target, VALID_TARGET)
         self.registerSanitizerLibrariesWithTarget(target)
 
-        # Disable the UBSan plugin before launching the process.
+        # Disable the UBSan plugin globally before launching the process so that
+        # it isn't loaded when the process starts.
         self.runCmd("plugin disable instrumentation-runtime.UndefinedBehaviorSanitizer")
-        self.assertFalse(self.ubsan_plugin_is_enabled())
+        try:
+            self.assertFalse(self.ubsan_plugin_is_enabled(domain='global'))
 
-        # Set a breakpoint on test_breakpoint which is called just before
-        # the last UBSan issue.
-        bp = target.BreakpointCreateByName("test_breakpoint")
-        self.assertTrue(bp.GetNumLocations() > 0)
+            # Set a breakpoint on test_breakpoint which is called just before
+            # the last UBSan issue.
+            bp = target.BreakpointCreateByName("test_breakpoint")
+            self.assertTrue(bp.GetNumLocations() > 0)
 
-        self.runCmd("run")
+            self.runCmd("run")
 
-        process = self.dbg.GetSelectedTarget().process
-        thread = process.GetSelectedThread()
-        frame = thread.GetSelectedFrame()
+            process = self.dbg.GetSelectedTarget().process
+            thread = process.GetSelectedThread()
+            frame = thread.GetSelectedFrame()
 
-        # We should have skipped most UBSan issues and stopped at the
-        # test_breakpoint function.
-        stop_reason = thread.GetStopReason()
-        self.assertStopReason(stop_reason, lldb.eStopReasonBreakpoint)
-        self.assertIn("test_breakpoint", frame.GetFunctionName())
+            # We should have skipped most UBSan issues and stopped at the
+            # test_breakpoint function.
+            stop_reason = thread.GetStopReason()
+            self.assertStopReason(stop_reason, lldb.eStopReasonBreakpoint)
+            self.assertIn("test_breakpoint", frame.GetFunctionName())
 
-        # Re-enable the UBSan plugin.
-        self.runCmd("plugin enable instrumentation-runtime.UndefinedBehaviorSanitizer")
-        self.assertTrue(self.ubsan_plugin_is_enabled())
+            # Re-enable the UBSan plugin for the target
+            # FIXME: this is broken
+            self.runCmd("plugin enable --domain target instrumentation-runtime.UndefinedBehaviorSanitizer")
+            self.assertTrue(self.ubsan_plugin_is_enabled(domain='target'))
+            self.assertFalse(self.ubsan_plugin_is_enabled(domain='global'))
 
-        # Continue
-        process.Continue()
-        thread = process.GetSelectedThread()
-        frame = thread.GetSelectedFrame()
+            # Continue
+            process.Continue()
+            thread = process.GetSelectedThread()
+            frame = thread.GetSelectedFrame()
 
-        # We should now hit the last UBSan issue.
-        self.check_stopped_at_ubsan_issue(self.line_third_ubsan_issue)
+            # We should now hit the last UBSan issue.
+            self.check_stopped_at_ubsan_issue(self.line_third_ubsan_issue)
 
-        # Continue. The process should exit cleanly.
-        process.Continue()
-        self.assertEqual(process.GetState(), lldb.eStateExited)
-        self.assertEqual(process.GetExitStatus(), 0)
-        self.assertTrue(self.ubsan_plugin_is_enabled())
+            # Continue. The process should exit cleanly.
+            process.Continue()
+            self.assertEqual(process.GetState(), lldb.eStateExited)
+            self.assertEqual(process.GetExitStatus(), 0)
+        finally:
+            # Now restore the global state to avoid affecting other tests.
+            self.runCmd("plugin enable --domain global instrumentation-runtime.UndefinedBehaviorSanitizer")
+            self.assertTrue(self.ubsan_plugin_is_enabled(domain='global'))
