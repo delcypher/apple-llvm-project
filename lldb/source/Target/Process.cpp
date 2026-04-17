@@ -6337,7 +6337,8 @@ Process::SetInstrumentationRuntimeEnabled(InstrumentationRuntimeType irt,
 
   // Create the plugin by finding its create callback and calling it.
   lldb::InstrumentationRuntimeSP new_plugin = nullptr;
-  for (auto &cbs : PluginManager::GetInstrumentationRuntimeCallbacks()) {
+  for (auto &cbs : PluginManager::GetInstrumentationRuntimeCallbacks(
+           /*enabled_only=*/false)) {
     InstrumentationRuntimeType other_irt = cbs.get_type_callback();
     if (other_irt != irt)
       continue;
