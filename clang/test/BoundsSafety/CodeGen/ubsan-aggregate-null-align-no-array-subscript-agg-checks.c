@@ -174,8 +174,6 @@ void test_lhs_ptrcheck_subscript(AGG arr[4]) {
 }
 
 // RHS checks
-//
-//
 // STRUCT-LABEL: define dso_local void @test_rhs_ptrcheck_deref(
 // STRUCT-SAME: ptr noundef [[SRC:%.*]]) #[[ATTR0]] {
 // STRUCT-NEXT:  [[ENTRY:.*:]]
@@ -225,7 +223,7 @@ void test_rhs_ptrcheck_deref(AGG *src) {
 //
 //
 // -fbounds-safety bounds checks missing here due to `-fno-bounds-safety-bringup-missing-checks=array_subscript_agg`
-// UBSan checks missing here due to `-fno-bounds-safety-bringup-missing-checks=array_subscript_agg`
+// UBSan checks emitted
 // STRUCT-LABEL: define dso_local void @test_rhs_ptrcheck_subscript(
 // STRUCT-SAME: ptr noundef [[ARR:%.*]]) #[[ATTR0]] {
 // STRUCT-NEXT:  [[ENTRY:.*:]]
@@ -244,6 +242,16 @@ void test_rhs_ptrcheck_deref(AGG *src) {
 // STRUCT-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds nuw %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0
 // STRUCT-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8
 // STRUCT-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [[STRUCT_AGG]], ptr [[WIDE_PTR_PTR]], i64 0
+// STRUCT-NEXT:    [[TMP4:%.*]] = icmp ne ptr [[ARRAYIDX]], null, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP5:%.*]] = ptrtoint ptr [[ARRAYIDX]] to i64, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP6:%.*]] = and i64 [[TMP5]], 3, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP7:%.*]] = icmp eq i64 [[TMP6]], 0, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP8:%.*]] = and i1 [[TMP4]], [[TMP7]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    br i1 [[TMP8]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
+// STRUCT:       [[HANDLER_TYPE_MISMATCH]]:
+// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB4:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
+// STRUCT:       [[CONT]]:
 // STRUCT-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 4 [[ARRAYIDX]], i64 4, i1 false)
 // STRUCT-NEXT:    ret void
 //
@@ -265,6 +273,16 @@ void test_rhs_ptrcheck_deref(AGG *src) {
 // UNION-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds nuw %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0
 // UNION-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8
 // UNION-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [[UNION_AGG]], ptr [[WIDE_PTR_PTR]], i64 0
+// UNION-NEXT:    [[TMP4:%.*]] = icmp ne ptr [[ARRAYIDX]], null, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP5:%.*]] = ptrtoint ptr [[ARRAYIDX]] to i64, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP6:%.*]] = and i64 [[TMP5]], 3, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP7:%.*]] = icmp eq i64 [[TMP6]], 0, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP8:%.*]] = and i1 [[TMP4]], [[TMP7]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    br i1 [[TMP8]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
+// UNION:       [[HANDLER_TYPE_MISMATCH]]:
+// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB4:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
+// UNION:       [[CONT]]:
 // UNION-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 4 [[ARRAYIDX]], i64 4, i1 false)
 // UNION-NEXT:    ret void
 //
@@ -275,8 +293,6 @@ void test_rhs_ptrcheck_subscript(AGG arr[4]) {
 }
 
 // RHS cases - handler call only
-//
-//
 // STRUCT-LABEL: define dso_local void @test_init_from_ptr(
 // STRUCT-SAME: ptr noundef [[SRC:%.*]]) #[[ATTR0]] {
 // STRUCT-NEXT:  [[ENTRY:.*:]]
@@ -291,7 +307,7 @@ void test_rhs_ptrcheck_subscript(AGG arr[4]) {
 // STRUCT-NEXT:    [[TMP5:%.*]] = and i1 [[TMP1]], [[TMP4]], {{!nosanitize ![0-9]+}}
 // STRUCT-NEXT:    br i1 [[TMP5]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
 // STRUCT:       [[HANDLER_TYPE_MISMATCH]]:
-// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB4:[0-9]+]], i64 [[TMP2]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB5:[0-9]+]], i64 [[TMP2]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
 // STRUCT-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
 // STRUCT:       [[CONT]]:
 // STRUCT-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 4 [[TMP0]], i64 4, i1 false)
@@ -311,7 +327,7 @@ void test_rhs_ptrcheck_subscript(AGG arr[4]) {
 // UNION-NEXT:    [[TMP5:%.*]] = and i1 [[TMP1]], [[TMP4]], {{!nosanitize ![0-9]+}}
 // UNION-NEXT:    br i1 [[TMP5]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
 // UNION:       [[HANDLER_TYPE_MISMATCH]]:
-// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB4:[0-9]+]], i64 [[TMP2]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB5:[0-9]+]], i64 [[TMP2]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
 // UNION-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
 // UNION:       [[CONT]]:
 // UNION-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 4 [[TMP0]], i64 4, i1 false)
@@ -324,7 +340,7 @@ void test_init_from_ptr(AGG *src) {
 
 //
 //
-// UBSan checks missing here due to `-fno-bounds-safety-bringup-missing-checks=array_subscript_agg`
+// UBSan checks emitted
 // -fbounds-safety bounds checks missing here due to `-fno-bounds-safety-bringup-missing-checks=array_subscript_agg`
 // STRUCT-LABEL: define dso_local void @test_init_from_array(
 // STRUCT-SAME: ptr noundef [[ARR:%.*]]) #[[ATTR0]] {
@@ -344,6 +360,16 @@ void test_init_from_ptr(AGG *src) {
 // STRUCT-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds nuw %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0
 // STRUCT-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8
 // STRUCT-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [[STRUCT_AGG]], ptr [[WIDE_PTR_PTR]], i64 0
+// STRUCT-NEXT:    [[TMP4:%.*]] = icmp ne ptr [[ARRAYIDX]], null, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP5:%.*]] = ptrtoint ptr [[ARRAYIDX]] to i64, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP6:%.*]] = and i64 [[TMP5]], 3, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP7:%.*]] = icmp eq i64 [[TMP6]], 0, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP8:%.*]] = and i1 [[TMP4]], [[TMP7]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    br i1 [[TMP8]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
+// STRUCT:       [[HANDLER_TYPE_MISMATCH]]:
+// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB6:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
+// STRUCT:       [[CONT]]:
 // STRUCT-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 4 [[ARRAYIDX]], i64 4, i1 false)
 // STRUCT-NEXT:    ret void
 //
@@ -365,6 +391,16 @@ void test_init_from_ptr(AGG *src) {
 // UNION-NEXT:    [[WIDE_PTR_PTR_ADDR:%.*]] = getelementptr inbounds nuw %"__bounds_safety::wide_ptr.bidi_indexable", ptr [[AGG_TEMP]], i32 0, i32 0
 // UNION-NEXT:    [[WIDE_PTR_PTR:%.*]] = load ptr, ptr [[WIDE_PTR_PTR_ADDR]], align 8
 // UNION-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [[UNION_AGG]], ptr [[WIDE_PTR_PTR]], i64 0
+// UNION-NEXT:    [[TMP4:%.*]] = icmp ne ptr [[ARRAYIDX]], null, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP5:%.*]] = ptrtoint ptr [[ARRAYIDX]] to i64, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP6:%.*]] = and i64 [[TMP5]], 3, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP7:%.*]] = icmp eq i64 [[TMP6]], 0, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP8:%.*]] = and i1 [[TMP4]], [[TMP7]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    br i1 [[TMP8]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
+// UNION:       [[HANDLER_TYPE_MISMATCH]]:
+// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB6:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
+// UNION:       [[CONT]]:
 // UNION-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 4 [[ARRAYIDX]], i64 4, i1 false)
 // UNION-NEXT:    ret void
 //
@@ -376,7 +412,7 @@ void test_init_from_array(AGG arr[4]) {
 // Array bounds - out-of-bounds access (RHS)
 //
 //
-// UBSan checks missing here due to `-fno-bounds-safety-bringup-missing-checks=array_subscript_agg`
+// UBSan checks emitted
 // -fbounds-safety bounds checks missing here due to `-fno-bounds-safety-bringup-missing-checks=array_subscript_agg`
 // STRUCT-LABEL: define dso_local void @test_oob_rhs(
 // STRUCT-SAME: ) #[[ATTR0]] {
@@ -386,6 +422,16 @@ void test_init_from_array(AGG arr[4]) {
 // STRUCT-NEXT:    [[ARRAYDECAY:%.*]] = getelementptr inbounds [4 x [[STRUCT_AGG]]], ptr [[ARR]], i64 0, i64 0
 // STRUCT-NEXT:    [[UPPER:%.*]] = getelementptr inbounds [[STRUCT_AGG]], ptr [[ARRAYDECAY]], i64 4
 // STRUCT-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [[STRUCT_AGG]], ptr [[ARRAYDECAY]], i64 4
+// STRUCT-NEXT:    [[TMP0:%.*]] = icmp ne ptr [[ARRAYIDX]], null, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[ARRAYIDX]] to i64, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP2:%.*]] = and i64 [[TMP1]], 15, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP3:%.*]] = icmp eq i64 [[TMP2]], 0, {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    [[TMP4:%.*]] = and i1 [[TMP0]], [[TMP3]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    br i1 [[TMP4]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
+// STRUCT:       [[HANDLER_TYPE_MISMATCH]]:
+// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB7:[0-9]+]], i64 [[TMP1]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
+// STRUCT:       [[CONT]]:
 // STRUCT-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 16 [[ARRAYIDX]], i64 4, i1 false)
 // STRUCT-NEXT:    ret void
 //
@@ -397,6 +443,16 @@ void test_init_from_array(AGG arr[4]) {
 // UNION-NEXT:    [[ARRAYDECAY:%.*]] = getelementptr inbounds [4 x [[UNION_AGG]]], ptr [[ARR]], i64 0, i64 0
 // UNION-NEXT:    [[UPPER:%.*]] = getelementptr inbounds [[UNION_AGG]], ptr [[ARRAYDECAY]], i64 4
 // UNION-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [[UNION_AGG]], ptr [[ARRAYDECAY]], i64 4
+// UNION-NEXT:    [[TMP0:%.*]] = icmp ne ptr [[ARRAYIDX]], null, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[ARRAYIDX]] to i64, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP2:%.*]] = and i64 [[TMP1]], 15, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP3:%.*]] = icmp eq i64 [[TMP2]], 0, {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    [[TMP4:%.*]] = and i1 [[TMP0]], [[TMP3]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    br i1 [[TMP4]], label %[[CONT:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
+// UNION:       [[HANDLER_TYPE_MISMATCH]]:
+// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB7:[0-9]+]], i64 [[TMP1]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
+// UNION:       [[CONT]]:
 // UNION-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 4 [[LOCAL]], ptr align 16 [[ARRAYIDX]], i64 4, i1 false)
 // UNION-NEXT:    ret void
 //
@@ -443,7 +499,7 @@ void test_oob_rhs(void) {
 // STRUCT-NEXT:    [[TMP8:%.*]] = and i1 [[TMP4]], [[TMP7]], {{!nosanitize ![0-9]+}}
 // STRUCT-NEXT:    br i1 [[TMP8]], label %[[CONT5:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
 // STRUCT:       [[HANDLER_TYPE_MISMATCH]]:
-// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB5:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// STRUCT-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB8:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
 // STRUCT-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
 // STRUCT:       [[CONT5]]:
 // STRUCT-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 16 [[ARRAYIDX]], ptr align 4 [[LOCAL]], i64 4, i1 false)
@@ -486,7 +542,7 @@ void test_oob_rhs(void) {
 // UNION-NEXT:    [[TMP8:%.*]] = and i1 [[TMP4]], [[TMP7]], {{!nosanitize ![0-9]+}}
 // UNION-NEXT:    br i1 [[TMP8]], label %[[CONT5:.*]], label %[[HANDLER_TYPE_MISMATCH:.*]], {{!prof ![0-9]+}}, {{!nosanitize ![0-9]+}}
 // UNION:       [[HANDLER_TYPE_MISMATCH]]:
-// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB5:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
+// UNION-NEXT:    call void @__ubsan_handle_type_mismatch_v1_abort(ptr @[[GLOB8:[0-9]+]], i64 [[TMP5]]) #[[ATTR5]], {{!nosanitize ![0-9]+}}
 // UNION-NEXT:    unreachable, {{!nosanitize ![0-9]+}}
 // UNION:       [[CONT5]]:
 // UNION-NEXT:    call void @llvm.memcpy.p0.p0.i64(ptr align 16 [[ARRAYIDX]], ptr align 4 [[LOCAL]], i64 4, i1 false)

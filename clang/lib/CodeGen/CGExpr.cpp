@@ -2187,16 +2187,42 @@ bool CodeGenFunction::IsWrappedCXXThis(const Expr *Obj) {
   return true;
 }
 
-LValue CodeGenFunction::EmitCheckedLValue(const Expr *E, TypeCheckKind TCK) {
+LValue CodeGenFunction::EmitCheckedLValue(const Expr *E, TypeCheckKind TCK
+                                          /*TO_UPSTREAM(BoundsSafety) ON*/
+                                          ,
+                                          bool SkipBoundsSafetyArraySubscriptCheck
+                                          /*TO_UPSTREAM(BoundsSafety) OFF*/) {
   LValue LV;
   auto *ASE = dyn_cast<ArraySubscriptExpr>(E);
   if (ASE && (SanOpts.has(SanitizerKind::ArrayBounds) ||
   /*TO_UPSTREAM(BoundsSafety) ON*/
 
-              ASE->getBase()->getType()->isPointerTypeWithBounds()))
+              ASE->getBase()->getType()->isPointerTypeWithBounds())) {
+    bool Accessed = true;
+    // When the caller asks to skip the legacy -fbounds-safety array-subscript
+    // bounds check (e.g. BS_CHK_ArraySubscriptAgg=off), pass Accessed=false to
+    // EmitArraySubscriptExpr only on the wide-pointer path so that
+    // EmitWidePtrArraySubscriptExpr suppresses the bounds-safety check.
+    //
+    // Switching Accessed=true -> Accessed=false here does not cost any UBSan
+    // ArrayBounds precision: EmitWidePtrArraySubscriptExpr never emits the
+    // UBSan ArrayBounds check (`__ubsan_handle_out_of_bounds`) -- the only
+    // check it gates on `Accessed` is `EmitBoundsSafetyBoundsCheck`, which is
+    // the -fbounds-safety trap. (Note this is *not* a claim that UBSan
+    // ArrayBounds would have fired without -fbounds-safety: under
+    // -fbounds-safety, indexable pointers and constant-array decays always
+    // route through EmitWidePtrArraySubscriptExpr, which never emits UBSan
+    // ArrayBounds regardless of `Accessed` -- the -fbounds-safety bounds
+    // check covers that role.)
+    //
+    // UBSan null/alignment via EmitTypeCheck below still fires regardless of
+    // `Accessed`.
+    if (SkipBoundsSafetyArraySubscriptCheck &&
+        ASE->getBase()->getType()->isPointerTypeWithBounds())
+      Accessed = false;
+    LV = EmitArraySubscriptExpr(cast<ArraySubscriptExpr>(E), Accessed);
   /*TO_UPSTREAM(BoundsSafety) OFF*/
-    LV = EmitArraySubscriptExpr(cast<ArraySubscriptExpr>(E), /*Accessed*/true);
-  else
+  } else
     LV = EmitLValue(E);
   if (!isa<DeclRefExpr>(E) && !LV.isBitField() && LV.isSimple()) {
     SanitizerSet SkippedChecks;
