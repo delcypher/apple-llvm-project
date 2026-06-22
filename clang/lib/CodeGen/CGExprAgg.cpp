@@ -367,35 +367,21 @@ AggExprEmitter::WidePointerElemCallback AggExprEmitter::DefaultElemCallback =
 /// then loads the result into DestPtr.
 void AggExprEmitter::EmitAggLoadOfLValue(const Expr *E) {
   /*TO_UPSTREAM(BoundsSafety) ON*/
-  bool Checked = true;
-  // This divergence from upstream here is a little complicated. Historically
-  // -fbounds-safety had a bug here because this function called `EmitLValue`
-  // instead of `EmitCheckedLValue` and it was later fixed to conditionally call
-  // `EmitCheckedLValue` for wide pointers to arrays of aggregates (but guarded
-  // by BS_CHK_ArraySubscriptAgg so we could gradually role out the new bounds
-  // check). However, since then upstream
-  // (https://github.com/llvm/llvm-project/pull/190739) made calling
-  // `EmitCheckedLValue` unconditional. If we didn't need to support compiling
-  // legacy bounds checks we could just call `EmitCheckedLValue` unconditionally
-  // like upstream does. However, we currently need to support legacy bounds
-  // checks so we have to support the different cases below.
-  if (CGF.getLangOpts().hasBoundsSafety() &&
+  // Under -fbounds-safety with BS_CHK_ArraySubscriptAgg disabled, suppress only
+  // the legacy -fbounds-safety bounds check on aggregate-load array subscripts
+  // whose *result* type is a plain aggregate (e.g. struct/union) -- the whole
+  // point of BS_CHK_ArraySubscriptAgg=off. UBSan null/alignment checks still
+  // fire via EmitCheckedLValue. When the result type is a wide pointer
+  // aggregate (e.g. `int *__indexable *__indexable arr; arr[i]`), the legacy
+  // behavior keeps the bounds-safety check so we leave Skip=false.
+  bool SkipBoundsSafetyArraySubscriptCheck =
+      CGF.getLangOpts().hasBoundsSafety() &&
       !CGF.getLangOpts().hasNewBoundsSafetyCheck(
-          clang::LangOptionsBase::BS_CHK_ArraySubscriptAgg)) {
-    if (isa<ArraySubscriptExpr>(E)) {
-      // Legacy -fbounds-safety check path. Preserve the old buggy behavior. On
-      // this path unfortunately UBSan checks will be missing because allowing
-      // these checks would also enable `BS_CHK_ArraySubscriptAgg` which is
-      // exact opposite of what is needed here.
-      Checked = E->getType()->isPointerTypeWithBounds();
-    } else {
-      // For all other cases we can do what upstream now does.
-      Checked = true;
-    }
-  }
-
-  LValue LV = Checked ? CGF.EmitCheckedLValue(E, CodeGenFunction::TCK_Load)
-                      : CGF.EmitLValue(E);
+          clang::LangOptionsBase::BS_CHK_ArraySubscriptAgg) &&
+      isa<ArraySubscriptExpr>(E) &&
+      !E->getType()->isPointerTypeWithBounds();
+  LValue LV = CGF.EmitCheckedLValue(E, CodeGenFunction::TCK_Load,
+                                    SkipBoundsSafetyArraySubscriptCheck);
   /*TO_UPSTREAM(BoundsSafety) OFF*/
 
   // If the type of the l-value is atomic, then do an atomic load.

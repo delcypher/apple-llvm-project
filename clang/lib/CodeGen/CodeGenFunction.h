@@ -4407,7 +4407,12 @@ public:
   /// Same as EmitLValue but additionally we generate checking code to
   /// guard against undefined behavior.  This is only suitable when we know
   /// that the address will be used to access the object.
-  LValue EmitCheckedLValue(const Expr *E, TypeCheckKind TCK);
+  LValue EmitCheckedLValue(const Expr *E, TypeCheckKind TCK
+                           /*TO_UPSTREAM(BoundsSafety) ON*/
+                           ,
+                           bool SkipBoundsSafetyArraySubscriptCheck = false
+                           /*TO_UPSTREAM(BoundsSafety) OFF*/
+  );
 
   RValue convertTempToRValue(Address addr, QualType type, SourceLocation Loc);
 
