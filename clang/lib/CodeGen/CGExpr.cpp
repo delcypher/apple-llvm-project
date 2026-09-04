@@ -1326,9 +1326,20 @@ void CodeGenFunction::EmitBoundsCheckImpl(
   // element-counting ('__counted_by') and plain-array cases pass a scale of 1.
   // The value reported to the runtime handler stays the (unscaled) index.
   llvm::Value *CheckIndex = IndexInst;
-  if (IndexScale > CharUnits::One())
-    CheckIndex = Builder.CreateMul(
-        IndexInst, llvm::ConstantInt::get(Ty, IndexScale.getQuantity()));
+  llvm::Value *ScaleOverflow = nullptr;
+  if (IndexScale > CharUnits::One()) {
+    // Scale the index to bytes with an overflow check. If
+    // 'index * sizeof(element)' overflows the comparison width the true byte
+    // offset is out of range, so treat the overflow as a bounds-check failure
+    // below rather than letting the product wrap to an in-bounds value.
+    llvm::Function *UMulWithOverflow =
+        CGM.getIntrinsic(llvm::Intrinsic::umul_with_overflow, Ty);
+    llvm::Value *ScaleResult = Builder.CreateCall(
+        UMulWithOverflow,
+        {IndexInst, llvm::ConstantInt::get(Ty, IndexScale.getQuantity())});
+    CheckIndex = Builder.CreateExtractValue(ScaleResult, 0);
+    ScaleOverflow = Builder.CreateExtractValue(ScaleResult, 1);
+  }
 
   llvm::Constant *StaticData[] = {
       EmitCheckSourceLocation(ArrayExpr->getExprLoc()),
@@ -1338,6 +1349,9 @@ void CodeGenFunction::EmitBoundsCheckImpl(
 
   llvm::Value *Check = Accessed ? Builder.CreateICmpULT(CheckIndex, BoundsInst)
                                 : Builder.CreateICmpULE(CheckIndex, BoundsInst);
+
+  if (ScaleOverflow)
+    Check = Builder.CreateAnd(Check, Builder.CreateNot(ScaleOverflow));
 
   if (BoundsSigned) {
     // Don't allow a negative bounds.
