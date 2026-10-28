@@ -1831,9 +1831,13 @@ class Base(unittest.TestCase):
         metrics_json = return_obj.GetOutput()
         return json.loads(metrics_json)
 
-    def plugin_is_enabled(self, namespace: str, name: str, domain: str = "global"):
+    def plugin_is_enabled(
+        self, namespace: str, name: str, domain: str = "global", debugger=None
+    ):
         assert domain in {"global", "debugger", "target"}
-        interp = self.dbg.GetCommandInterpreter()
+        if debugger is None:
+            debugger = self.dbg
+        interp = debugger.GetCommandInterpreter()
         result = lldb.SBCommandReturnObject()
         cmd = f"plugin list --json --domain {domain} {namespace}.{name}"
         interp.HandleCommand(cmd, result)

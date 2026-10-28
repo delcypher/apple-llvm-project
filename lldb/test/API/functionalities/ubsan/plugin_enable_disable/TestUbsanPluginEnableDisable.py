@@ -13,16 +13,21 @@ class UbsanPluginEnableDisableTestCase(TestBase):
     def setUp(self):
         TestBase.setUp(self)
         self.line_first_ubsan_issue = line_number("main.c", "// first ubsan issue")
+        self.line_second_ubsan_issue = line_number("main.c", "// second ubsan issue")
         self.line_third_ubsan_issue = line_number("main.c", "// third ubsan issue")
         self.line_fourth_ubsan_issue = line_number("main.c", "// fourth ubsan issue")
 
-    def ubsan_plugin_is_enabled(self, domain: str):
+    def ubsan_plugin_is_enabled(self, domain: str, debugger=None):
         return self.plugin_is_enabled(
-            "instrumentation-runtime", "UndefinedBehaviorSanitizer", domain=domain
+            "instrumentation-runtime",
+            "UndefinedBehaviorSanitizer",
+            domain=domain,
+            debugger=debugger,
         )
 
-    def check_stopped_at_ubsan_issue(self, line_num):
-        process = self.dbg.GetSelectedTarget().process
+    def check_stopped_at_ubsan_issue(self, line_num, process=None):
+        if process is None:
+            process = self.dbg.GetSelectedTarget().process
         thread = process.GetSelectedThread()
         stop_reason = thread.GetStopReason()
         self.assertStopReason(stop_reason, lldb.eStopReasonInstrumentation)
@@ -325,3 +330,148 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         process.Continue()
         self.assertEqual(process.GetState(), lldb.eStateExited)
         self.assertEqual(process.GetExitStatus(), 0)
+
+    @skipUnlessUndefinedBehaviorSanitizer
+    @skipIfRemote  # The second debugger isn't connected to the remote platform.
+    @no_debug_info_test
+    def test_global_domain_affects_all_debuggers(self):
+        """Test that enabling/disabling the UBSan plugin in the global domain
+        affects alive processes in all debuggers, not just the one running the
+        command."""
+        self.build()
+        exe = self.getBuildArtifact("a.out")
+
+        target = self.dbg.CreateTarget(exe)
+        self.assertTrue(target, VALID_TARGET)
+        self.registerSanitizerLibrariesWithTarget(target)
+
+        other_dbg = lldb.SBDebugger.Create(False)
+        other_dbg.SetAsync(False)
+        other_process = None
+        try:
+            other_target = other_dbg.CreateTarget(exe)
+            self.assertTrue(other_target, VALID_TARGET)
+            self.registerSanitizerLibrariesWithTarget(other_target)
+
+            # Launch a process in each debugger. Both should stop on the first
+            # UBSan issue.
+            self.runCmd("run")
+            self.check_stopped_at_ubsan_issue(self.line_first_ubsan_issue)
+            process = target.GetProcess()
+
+            other_process = other_target.LaunchSimple(
+                None, None, self.get_process_working_directory()
+            )
+            self.assertTrue(other_process, PROCESS_IS_VALID)
+            self.check_stopped_at_ubsan_issue(
+                self.line_first_ubsan_issue, process=other_process
+            )
+
+            self.assertTrue(self.ubsan_plugin_is_enabled(domain="target"))
+            self.assertTrue(
+                self.ubsan_plugin_is_enabled(domain="target", debugger=other_dbg)
+            )
+
+            # Disable the plugin globally from the first debugger.
+            self.runCmd(
+                "plugin disable --domain global instrumentation-runtime.UndefinedBehaviorSanitizer"
+            )
+            self.assertFalse(self.ubsan_plugin_is_enabled(domain="global"))
+
+            # The plugin should be disabled in the alive processes of both
+            # debuggers.
+            self.assertFalse(self.ubsan_plugin_is_enabled(domain="target"))
+            self.assertFalse(
+                self.ubsan_plugin_is_enabled(domain="target", debugger=other_dbg)
+            )
+
+            # Continue both processes. The remaining UBSan issues should not
+            # cause instrumentation stops and both processes should exit
+            # cleanly.
+            process.Continue()
+            self.assertEqual(process.GetState(), lldb.eStateExited)
+            self.assertEqual(process.GetExitStatus(), 0)
+
+            other_process.Continue()
+            self.assertEqual(other_process.GetState(), lldb.eStateExited)
+            self.assertEqual(other_process.GetExitStatus(), 0)
+        finally:
+            # Restore the global state to avoid affecting other tests.
+            self.runCmd(
+                "plugin enable --domain global instrumentation-runtime.UndefinedBehaviorSanitizer"
+            )
+            self.assertTrue(self.ubsan_plugin_is_enabled(domain="global"))
+            if other_process and other_process.IsValid():
+                other_process.Kill()
+            lldb.SBDebugger.Destroy(other_dbg)
+
+    @skipUnlessUndefinedBehaviorSanitizer
+    @skipIfRemote  # The second debugger isn't connected to the remote platform.
+    @no_debug_info_test
+    def test_debugger_domain_only_affects_requesting_debugger(self):
+        """Test that disabling the UBSan plugin in the debugger domain only
+        affects alive processes in the debugger running the command."""
+        self.build()
+        exe = self.getBuildArtifact("a.out")
+
+        target = self.dbg.CreateTarget(exe)
+        self.assertTrue(target, VALID_TARGET)
+        self.registerSanitizerLibrariesWithTarget(target)
+
+        other_dbg = lldb.SBDebugger.Create(False)
+        other_dbg.SetAsync(False)
+        other_process = None
+        try:
+            other_target = other_dbg.CreateTarget(exe)
+            self.assertTrue(other_target, VALID_TARGET)
+            self.registerSanitizerLibrariesWithTarget(other_target)
+
+            # Launch a process in each debugger. Both should stop on the first
+            # UBSan issue.
+            self.runCmd("run")
+            self.check_stopped_at_ubsan_issue(self.line_first_ubsan_issue)
+            process = target.GetProcess()
+
+            other_process = other_target.LaunchSimple(
+                None, None, self.get_process_working_directory()
+            )
+            self.assertTrue(other_process, PROCESS_IS_VALID)
+            self.check_stopped_at_ubsan_issue(
+                self.line_first_ubsan_issue, process=other_process
+            )
+
+            self.assertTrue(self.ubsan_plugin_is_enabled(domain="target"))
+            self.assertTrue(
+                self.ubsan_plugin_is_enabled(domain="target", debugger=other_dbg)
+            )
+
+            # Disable the plugin in the debugger domain of the first debugger.
+            self.runCmd(
+                "plugin disable --domain debugger instrumentation-runtime.UndefinedBehaviorSanitizer"
+            )
+
+            # The plugin should only be disabled in the first debugger. The
+            # global enablement flag is not changed.
+            self.assertFalse(self.ubsan_plugin_is_enabled(domain="target"))
+            self.assertTrue(
+                self.ubsan_plugin_is_enabled(domain="target", debugger=other_dbg)
+            )
+            self.assertTrue(self.ubsan_plugin_is_enabled(domain="global"))
+
+            # Continue the first debugger's process. The remaining UBSan issues
+            # should not cause instrumentation stops and the process should
+            # exit cleanly.
+            process.Continue()
+            self.assertEqual(process.GetState(), lldb.eStateExited)
+            self.assertEqual(process.GetExitStatus(), 0)
+
+            # Continue the other debugger's process. The plugin is still
+            # enabled there so it should stop on the next UBSan issue.
+            other_process.Continue()
+            self.check_stopped_at_ubsan_issue(
+                self.line_second_ubsan_issue, process=other_process
+            )
+        finally:
+            if other_process and other_process.IsValid():
+                other_process.Kill()
+            lldb.SBDebugger.Destroy(other_dbg)

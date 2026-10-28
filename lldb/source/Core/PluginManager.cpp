@@ -2543,6 +2543,40 @@ llvm::StringRef PluginManager::PluginDomainKindToStr(PluginDomainKind kind) {
   llvm_unreachable("unhandled PluginDomainKind");
 }
 
+/// Enable/disable the instrumentation runtime \p irt in every alive process in
+/// \p debugger. If \p report_missing_processes is true then an error is
+/// returned if \p debugger has no targets or no alive processes.
+static llvm::Error SetInstrumentationRuntimeEnabledInDebugger(
+    Debugger &debugger, lldb::InstrumentationRuntimeType irt, bool enable,
+    bool report_missing_processes) {
+  llvm::Error errors = llvm::Error::success();
+  bool found_targets = false;
+  bool found_alive_process = false;
+  for (const auto &target_sp : debugger.GetTargetList().Targets()) {
+    found_targets = true;
+    ProcessSP process_sp = target_sp->GetProcessSP();
+    if (!process_sp || !process_sp->IsAlive())
+      continue;
+    found_alive_process = true;
+    errors = llvm::joinErrors(
+        std::move(errors),
+        process_sp->SetInstrumentationRuntimeEnabled(irt, enable));
+  }
+
+  if (!report_missing_processes)
+    return errors;
+
+  if (!found_targets)
+    errors = llvm::joinErrors(
+        std::move(errors), llvm::createStringError("debugger has no targets"));
+  else if (!found_alive_process)
+    errors = llvm::joinErrors(
+        std::move(errors),
+        llvm::createStringError("no alive processes in debugger"));
+
+  return errors;
+}
+
 llvm::Error PluginManager::SetInstrumentationRuntimePluginEnabled(
     llvm::StringRef name, bool enable, Debugger &requesting_debugger,
     lldb::TargetSP selected_target, PluginDomainKind domain) {
@@ -2558,50 +2592,46 @@ llvm::Error PluginManager::SetInstrumentationRuntimePluginEnabled(
   };
 
   switch (domain) {
-  case lldb::ePluginDomainKindGlobal:
+  case lldb::ePluginDomainKindGlobal: {
     // Update the global enablement flag
     if (!GetInstrumentationRuntimeInstances().SetInstanceEnabled(name, enable))
       return llvm::createStringErrorV("could not find plugin {}", name);
-    // We should in principle iterate over all debuggers and enable/disable
-    // their runtimes. However, this doesn't work because we need to hold
-    // `GetDebuggerListMutex` to safely iterate and this can cause deadlock when
-    // trying to activate a plugin (creating a breakpoint might call
-    // `Debugger::ReportProgress` which also tries to lock the mutex). For now
-    // just don't update live processes.
-    // FIXME: We should probably emit a warning about this.
-    return llvm::Error::success();
+    auto instrumentation_runtime_ty = GetInstrumentationRuntimeTy();
+    if (auto E = instrumentation_runtime_ty.takeError())
+      return E;
+
+    // Copy the list of debuggers so the debugger list mutex isn't held while
+    // enabling/disabling the plugin. Holding it can cause deadlock because
+    // activating a plugin may create a breakpoint which might call
+    // `Debugger::ReportProgress` which also tries to lock the mutex. Debuggers
+    // destroyed after the copy is made are kept alive by the copy. Debuggers
+    // created after the copy is made are not updated but the global enablement
+    // flag applies to any processes they create.
+    Debugger::DebuggerList debuggers;
+    for (const DebuggerSP &debugger_sp : Debugger::Debuggers())
+      debuggers.push_back(debugger_sp);
+
+    // Enable/disable the plugin in every alive process in every debugger.
+    llvm::Error errors = llvm::Error::success();
+    for (const DebuggerSP &debugger_sp : debuggers)
+      errors = llvm::joinErrors(std::move(errors),
+                                SetInstrumentationRuntimeEnabledInDebugger(
+                                    *debugger_sp, *instrumentation_runtime_ty,
+                                    enable,
+                                    /*report_missing_processes=*/false));
+    return errors;
+  }
   case lldb::ePluginDomainKindDebugger: {
     // Deliberately don't update the global enablement flag here.
     auto instrumentation_runtime_ty = GetInstrumentationRuntimeTy();
     if (auto E = instrumentation_runtime_ty.takeError())
       return E;
 
-    // Loop over all targets in requesting debugger and enable the plugin in
-    // each of them.
-    llvm::Error errors = llvm::Error::success();
-    bool found_targets = false;
-    bool found_alive_process = false;
-    for (const auto &target_sp :
-         requesting_debugger.GetTargetList().Targets()) {
-      found_targets = true;
-      ProcessSP process_sp = target_sp->GetProcessSP();
-      if (!process_sp || !process_sp->IsAlive())
-        continue;
-      found_alive_process = true;
-      errors = llvm::joinErrors(std::move(errors),
-                                process_sp->SetInstrumentationRuntimeEnabled(
-                                    *instrumentation_runtime_ty, enable));
-    }
-    if (!found_targets)
-      errors =
-          llvm::joinErrors(std::move(errors),
-                           llvm::createStringError("debugger has no targets"));
-    else if (!found_alive_process)
-      errors = llvm::joinErrors(
-          std::move(errors),
-          llvm::createStringError("no alive processes in debugger"));
-
-    return errors;
+    // Enable/disable the plugin in every alive process in the requesting
+    // debugger.
+    return SetInstrumentationRuntimeEnabledInDebugger(
+        requesting_debugger, *instrumentation_runtime_ty, enable,
+        /*report_missing_processes=*/true);
   }
   case lldb::ePluginDomainKindTarget: {
     // Deliberately don't update the global enablement flag here.
