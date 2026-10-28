@@ -419,6 +419,7 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
 
     @skipIfWindows
     @skipUnlessBoundsSafety
+    @skipIfRemote  # The dylib's directory compiled into a.out is a host path.
     @no_debug_info_test
     def test_call_minimal_disabled_plugin_stays_disabled_after_dlopen(self):
         """
@@ -438,12 +439,10 @@ class BoundsSafetyTestSoftTrapPlugin(TestBase):
         )
         self.assertTrue(bp_after_dlopen.GetNumLocations() > 0)
 
-        # Launch in the build directory so that dlopen can find the dylib.
-        process = self.test_target.LaunchSimple(
-            None, None, self.get_process_working_directory()
-        )
-        self.assertTrue(process, PROCESS_IS_VALID)
+        self.runCmd("run")
         self.assertTrue(self.bs_plugin_is_enabled(domain="target"))
+
+        process = self.test_target.process
 
         # First soft trap hit
         self.check_state_soft_trap_minimal(

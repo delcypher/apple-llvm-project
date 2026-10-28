@@ -280,6 +280,7 @@ class UbsanPluginEnableDisableTestCase(TestBase):
             self.assertTrue(self.ubsan_plugin_is_enabled(domain="global"))
 
     @skipUnlessUndefinedBehaviorSanitizer
+    @skipIfRemote  # The dylib's directory compiled into a.out is a host path.
     @no_debug_info_test
     def test_disabled_plugin_stays_disabled_after_dlopen(self):
         """Test that a disabled UBSan plugin is not re-activated when a new
@@ -294,6 +295,11 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         # before the dlopen call.
         bp = target.BreakpointCreateByName("test_breakpoint_dlopen")
         self.assertTrue(bp.GetNumLocations() > 0)
+
+        # Set a breakpoint on test_breakpoint_after_dlopen which is called
+        # after calling into the dylib.
+        bp_after_dlopen = target.BreakpointCreateByName("test_breakpoint_after_dlopen")
+        self.assertTrue(bp_after_dlopen.GetNumLocations() > 0)
 
         # Enable the dlopen test path via environment variable.
         self.runCmd("settings set target.env-vars DO_DLOPEN=1")
@@ -326,7 +332,25 @@ class UbsanPluginEnableDisableTestCase(TestBase):
         # Continue past dlopen. Loading a new shared library triggers
         # ModulesDidLoad. The plugin must stay disabled and not re-activate.
         # If the plugin re-activates, we would stop on the ubsan issue
-        # inside the dylib instead of exiting cleanly.
+        # inside the dylib instead of the breakpoint.
+        process.Continue()
+        thread = process.GetSelectedThread()
+        frame = thread.GetSelectedFrame()
+        self.assertStopReason(thread.GetStopReason(), lldb.eStopReasonBreakpoint)
+        self.assertEqual(frame.GetFunctionName(), "test_breakpoint_after_dlopen")
+        self.assertFalse(self.ubsan_plugin_is_enabled(domain="target"))
+
+        # Make sure the dylib was actually loaded, otherwise this test isn't
+        # testing anything.
+        self.assertTrue(
+            any(
+                "dylib_with_ubsan_issue" in module.GetFileSpec().GetFilename()
+                for module in target.module_iter()
+            ),
+            "dylib was not loaded",
+        )
+
+        # Continue. The process should exit cleanly.
         process.Continue()
         self.assertEqual(process.GetState(), lldb.eStateExited)
         self.assertEqual(process.GetExitStatus(), 0)

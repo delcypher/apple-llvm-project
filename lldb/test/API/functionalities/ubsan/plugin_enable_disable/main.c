@@ -19,9 +19,17 @@
 #endif
 #endif
 
+#ifdef _WIN32
+// Windows searches the executable's directory for DLLs.
+#define DYLIB_PATH DYLIB_NAME
+#else
+#define DYLIB_PATH DYLIB_DIR "/" DYLIB_NAME
+#endif
+
 __attribute__((noinline, optnone)) void test_breakpoint(void) {}
 __attribute__((noinline, optnone)) void test_breakpoint_2(void) {}
 __attribute__((noinline, optnone)) void test_breakpoint_dlopen(void) {}
+__attribute__((noinline, optnone)) void test_breakpoint_after_dlopen(void) {}
 
 __attribute__((noinline, optnone)) int shift(void) { return 33; }
 
@@ -39,11 +47,12 @@ int main() {
     // dlopen a shared library. This triggers ModulesDidLoad which could
     // re-activate a disabled plugin.
     test_breakpoint_dlopen();
-    void *handle = DLOPEN(DYLIB_NAME);
+    void *handle = DLOPEN(DYLIB_PATH);
     if (handle) {
       int (*func)(void) = (int (*)(void))DLSYM(handle, "dylib_ubsan_issue");
       if (func)
         x += func(); // ubsan issue inside dylib
+      test_breakpoint_after_dlopen();
       DLCLOSE(handle);
     }
   }

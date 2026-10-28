@@ -19,6 +19,13 @@
 #endif
 #endif
 
+#ifdef _WIN32
+// Windows searches the executable's directory for DLLs.
+#define DYLIB_PATH DYLIB_NAME
+#else
+#define DYLIB_PATH DYLIB_DIR "/" DYLIB_NAME
+#endif
+
 __attribute__((noinline, optnone)) void test_breakpoint(void) {}
 __attribute__((noinline, optnone)) void test_breakpoint_2(void) {}
 __attribute__((noinline, optnone)) void test_breakpoint_dlopen(void) {}
@@ -42,7 +49,7 @@ int main(void) {
     // dlopen a shared library that contains the soft trap runtime functions.
     // This triggers ModulesDidLoad which could re-activate a disabled plugin.
     test_breakpoint_dlopen();
-    void *__unsafe_indexable handle = DLOPEN(DYLIB_NAME);
+    void *__unsafe_indexable handle = DLOPEN(DYLIB_PATH);
     if (handle) {
       typedef int (*dylib_func_t)(void);
       dylib_func_t func =
