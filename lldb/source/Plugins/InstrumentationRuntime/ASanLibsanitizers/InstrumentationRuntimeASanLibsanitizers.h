@@ -41,7 +41,7 @@ private:
 
   void Activate() override;
 
-  void Deactivate() override;
+  void Deactivate();
 
   static bool
   NotifyBreakpointHit(void *baton,
